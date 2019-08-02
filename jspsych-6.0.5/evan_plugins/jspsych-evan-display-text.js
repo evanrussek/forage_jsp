@@ -23,7 +23,7 @@ jsPsych.plugins["evan-display-text"] = (function() {
     },
     wait_for_press: {
       type: jsPsych.plugins.parameterType.BOOL,
-      default: false
+      default: true
     }
   }
 }
@@ -47,6 +47,8 @@ jsPsych.plugins["evan-display-text"] = (function() {
 
     // get params
     var par = define_parameters('trial');
+    par.text_font_size = 50;
+
 
     var svg = d3.select(".jspsych-content-wrapper")
                 .append("svg")
@@ -72,9 +74,9 @@ jsPsych.plugins["evan-display-text"] = (function() {
 
     if (trial.wait_for_press){
       // set up max response time?
-      var txt_y =  par.h  - par.stg_bkg_y;
+      var txt_y =  .8*par.h;
       var prompt = 'Press 4 to continue'
-      place_text(prompt, "prompt", par.w/2, txt_y, par.text_font_size/2, 1, "White")
+      place_text(prompt, "prompt", par.w/2, txt_y, 28, 1, "White")
 
       var handle_response = function(info){
         jsPsych.pluginAPI.clearAllTimeouts();

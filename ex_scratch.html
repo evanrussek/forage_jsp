@@ -4,27 +4,16 @@
   <head>
     <title>My experiment</title>
     <script src="jspsych-6.0.5/jspsych.js"></script>
-    <script src="jspsych-6.0.5/plugins/jspsych-html-keyboard-response.js"></script>
-    <script src="jspsych-6.0.5/plugins/jspsych-html-button-response.js"></script>
-    <script src="jspsych-6.0.5/plugins/jspsych-image-keyboard-response.js"></script>
     <script src="jspsych-6.0.5/plugins/jspsych-fullscreen.js"></script>
-    <script src="jspsych-6.0.5/evan_plugins/jspsych-evan-run-trial.js"></script>
-    <script src="jspsych-6.0.5/evan_plugins/jspsych-evan-instructions.js"></script>
-    <script src="jspsych-6.0.5/evan_plugins/jspsych-evan-info-quiz.js"></script>
-    <script src="jspsych-6.0.5/evan_plugins/jspsych-evan-two-stim-choice.js"></script>
+    <script src="jspsych-6.0.5/evan_plugins/jspsych-evan-travel.js"></script>
     <script src="jspsych-6.0.5/evan_plugins/jspsych-evan-display-text.js"></script>
-    <script src="jspsych-6.0.5/evan_plugins/jspsych-evan-reward-quiz.js"></script>
     <link href="jspsych-6.0.5/css/jspsych.css" rel="stylesheet" type="text/css"></link>
     <link rel='stylesheet' type='text/css' href='default_style.css'>
     <link rel='stylesheet' type='text/css' href='style.css'>
     <script type="text/javascript" src="jspsych-6.0.5/d3.min.js"></script>
   </head>
   <body></body>
-  <script type="text/javascript" src="evan_utils.js"></script>
-  <script type="text/javascript" src="define_subj_params.js"></script>
   <script type="text/javascript" src="parameters.js"></script>
-  <script type="text/javascript" src="define_practice_trials.js"></script>
-  <script type="text/javascript" src="define_trials.js"></script>
   <script>
 
   /* */
@@ -36,9 +25,92 @@
     fullscreen_mode: true
   };
 
+  var travel1 = {
+    type: 'travel',
+    start_reward: 50,
+    decay: .98,
+    n_travel_steps: 12,
+    press_success_prob_travel: .7,
+    press_success_prob_harvest: .7,
+    reward_noise: .5,
+    start_reward_noise: 4,
+    time_min: 10
+  }
+
+  var travel2 = {
+    type: 'travel',
+    start_reward: 50,
+    decay: .98,
+    n_travel_steps: 25,
+    press_success_prob_travel: .7,
+    press_success_prob_harvest: .7,
+    reward_noise: .5,
+    start_reward_noise: 4,
+    time_min: 2.5
+  }
+
+
+  var travel3 = {
+    type: 'travel',
+    start_reward: 100,
+    decay: .98,
+    n_travel_steps: 12,
+    press_success_prob_travel: .7,
+    press_success_prob_harvest: .7,
+    reward_noise: .5,
+    start_reward_noise: 4,
+    time_min: 2.5
+  }
+
+  var travel4 = {
+    type: 'travel',
+    start_reward: 100,
+    decay: .98,
+    n_travel_steps: 25,
+    press_success_prob_travel: .7,
+    press_success_prob_harvest: .7,
+    reward_noise: .5,
+    start_reward_noise: 4,
+    time_min: 2.5
+  }
+
+  var travel4 = {
+    type: 'travel',
+    start_reward: 100,
+    decay: .98,
+    n_travel_steps: 25,
+    press_success_prob_travel: .7,
+    press_success_prob_harvest: .7,
+    reward_noise: .5,
+    start_reward_noise: 4,
+    time_min: 2.5
+  }
+
+var text_trial = {
+  type: 'evan-display-text',
+  line_1: "Traveling to a new environment",
+  line_2: "Travel key: A, Harvest key: J",
+  line_3: ""
+}
+
+
+
+// shuffle these
+trials = [travel1, travel2, travel3, travel4];
+
+shuffled_trials = jsPsych.randomization.shuffle(trials,1);
+
+/* create timeline */
+var timeline = [];
+timeline.push(full_screen);
+
+for (i = 0; i < shuffled_trials.length; i++){
+  timeline.push(text_trial);
+  timeline.push(shuffled_trials[i]);
+}
 
 //timeline = [full_screen, block1_node, block2_node];
-timeline = [full_screen].concat(main_task);
+//timeline = [full_screen].concat(shuffled_trials);
 //timeline = [full_screen button_trial];
 //timeline = [full_screen,inst_trial];
 //timeline = [full_screen, choice_trial, choice_trial, choice_trial, choice_trial];
