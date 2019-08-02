@@ -1,0 +1,38 @@
+// function for stopping the presentation
+var check_timeout = function(timestamp) {
+    frame_count++;
+    // diode specific timeout
+    if (frame_count >= frame_count_diode && diode_on) {
+        document.querySelector('#diode').remove();
+        data_temp[txt_offset + '_diode_offset'] = window.performance.now();
+        diode_on = false;
+        window.requestAnimationFrame(check_timeout);
+    // general stage timeout
+    } else if (frame_count >= frame_count_stage) {
+        next_stage();
+    // otherwise repeat the loop
+    } else {
+        window.requestAnimationFrame(check_timeout);
+    };
+};  // end of the function
+
+
+e
+// function for easier update of stage variables
+var update_stage_vars = function(timing_stim, timing_diode, txt, response_on = false) {
+    frame_count = 0;
+    frame_count_stage = Math.round(timing_stim / estimated_frame_duration);
+    frame_count_diode = Math.round(timing_diode / estimated_frame_duration);
+    txt_offset = txt;
+    if (response_on) {
+        diode_on = false;
+    } else {
+        diode_on = true;
+    }
+    // print stage info
+    if (verbose) {
+        console.log("---------- " + txt + " stage ---------")
+        console.log("Target frame count stage", frame_count_stage)
+        console.log("Target frame count diode", frame_count_diode)
+    };
+};
