@@ -44,9 +44,24 @@ jsPsych.plugins["travel"] = (function() {
       time_min:{ // how long should this go?
         type:jsPsych.plugins.parameterType.FLOAT,
         default: undefined
+      },
+      travel_key:{
+        type:jsPsych.plugins.parameterType.STRING,
+        default: undefined
+      },
+      travel_key_cap:{
+        type:jsPsych.plugins.parameterType.STRING,
+        default: undefined
+      } ,
+      harvest_key:{
+        type:jsPsych.plugins.parameterType.STRING,
+        default: undefined
+      },
+      harvest_key_cap:{
+        type:jsPsych.plugins.parameterType.STRING,
+        default: undefined
       }
-    }
-  }
+  }}
 
   plugin.trial = function(display_element, trial) {
 
@@ -66,25 +81,25 @@ jsPsych.plugins["travel"] = (function() {
 
 
     // start parameters
-    n_travel_steps = trial.n_travel_steps;
-    start_reward = trial.start_reward;
-    decay = trial.decay;
+    var n_travel_steps = trial.n_travel_steps;
+    var start_reward = trial.start_reward;
+    var decay = trial.decay;
 
-    person_pos = 1;
-    tree_pos = (person_pos + n_travel_steps + 2) % n_steps_screen;
-    total_dist = max_pos - min_pos;
-    increment = total_dist/n_steps_screen;
-    person_x_pos_middle = min_pos + person_pos*increment;
-    tree_x_pos_middle = min_pos + tree_pos*increment;
-    at_tree = false;
+    var person_pos = 1;
+    var tree_pos = (person_pos + n_travel_steps + 2) % n_steps_screen;
+    var total_dist = max_pos - min_pos;
+    var increment = total_dist/n_steps_screen;
+    var person_x_pos_middle = min_pos + person_pos*increment;
+    var tree_x_pos_middle = min_pos + tree_pos*increment;
+    var at_tree = false;
 
     var press_success_prob_travel = trial.press_success_prob_travel;
     var press_success_prob_harvest = trial.press_success_prob_harvest;
 
-    var travel_key = 'a';
-    var travel_key_cap = 'A';
-    var harvest_key = 'j';
-    var harvest_key_cap = 'J';
+    var travel_key = trial.travel_key;
+    var travel_key_cap = trial.travel_key_cap;
+    var harvest_key = trial.harvest_key;
+    var harvest_key_cap = trial.harvest_key_cap;
     var show_prompt = true;
 
 
@@ -142,20 +157,38 @@ jsPsych.plugins["travel"] = (function() {
 
       var handle_travel_response = function(info){
           console.log('response heard')
+          if (typeof keyboardListener !== 'undefined') {
+            jsPsych.pluginAPI.cancelKeyboardResponse(keyboardListener);
+          }
           //jsPsych.pluginAPI.clearAllTimeouts();
           response = info;
           //key_vec.push(response.key)
           //lag_vec.push(response.rt);
 
-          var data = {
-            phase: "TRAVEL",
-            lag: response.rt,
-            key: response.key,
-          };
-          jsPsych.data.write(data);
-
 
           if (Math.random() < press_success_prob_travel){
+
+            var data = {
+              phase: "TRAVEL",
+              lag: response.rt,
+              key: response.key,
+              start_reward: trial.start_reward,
+              decay: trial.decay,
+              n_travel_steps: trial.n_travel_steps,
+              press_success_prob_travel: trial.press_success_prob_travel,
+              press_success_prob_harvest: trial.press_success_prob_harvest,
+              reward_noise: trial.reward_noise,
+              start_reward_noise: trial.start_reward_noise,
+              time_min: trial.time_min,
+              travel_key: trial.travel_key,
+              harvest_key: trial.harvest_key,
+              person_pos: person_pos,
+              tree_pos: tree_pos,
+              success: true
+            };
+
+            jsPsych.data.write(data);
+
 
             person_pos = person_pos+1;
             if (person_pos > n_steps_screen){
@@ -179,8 +212,30 @@ jsPsych.plugins["travel"] = (function() {
             console.log(tree_pos)
             harvest_phase()
           } else{
+            var data = {
+              phase: "TRAVEL",
+              lag: response.rt,
+              key: response.key,
+              start_reward: trial.start_reward,
+              decay: trial.decay,
+              n_travel_steps: trial.n_travel_steps,
+              press_success_prob_travel: trial.press_success_prob_travel,
+              press_success_prob_harvest: trial.press_success_prob_harvest,
+              reward_noise: trial.reward_noise,
+              start_reward_noise: trial.start_reward_noise,
+              time_min: trial.time_min,
+              travel_key: trial.travel_key,
+              harvest_key: trial.harvest_key,
+              person_pos: person_pos,
+              tree_pos: tree_pos,
+              success: false
+            };
+
+            jsPsych.data.write(data);
+
+
             // set up the keypress
-            var keyboardListener = jsPsych.pluginAPI.getKeyboardResponse({
+            keyboardListener = jsPsych.pluginAPI.getKeyboardResponse({
                   callback_function: handle_travel_response,
                   valid_responses: [travel_key],
                   rt_method: 'performance', // check this
@@ -191,7 +246,7 @@ jsPsych.plugins["travel"] = (function() {
       } // end handle_travel_response
 
       // set up the keypress
-      var keyboardListener = jsPsych.pluginAPI.getKeyboardResponse({
+       keyboardListener = jsPsych.pluginAPI.getKeyboardResponse({
           callback_function: handle_travel_response,
           valid_responses: [travel_key],
           rt_method: 'performance', // check this
@@ -218,6 +273,11 @@ jsPsych.plugins["travel"] = (function() {
       var handle_harvest_response =   function(info){
             console.log('harvest response heard')
             //jsPsych.pluginAPI.clearAllTimeouts();
+            // kill keyboard listeners
+            if (typeof keyboardListener !== 'undefined') {
+              jsPsych.pluginAPI.cancelKeyboardResponse(keyboardListener);
+            }
+
             response = info;
 
             var choice_char = jsPsych.pluginAPI.convertKeyCodeToKeyCharacter(response.key);
@@ -227,7 +287,7 @@ jsPsych.plugins["travel"] = (function() {
             if (choice_char == harvest_key){
               if (Math.random() < press_success_prob_harvest){
                 // show the money falling
-                rew_im = d3.select("svg").append("text")
+                var rew_im = d3.select("svg").append("text")
                           .attr("class", "reward")
                           .attr("x",  rew_x)
                           .attr("y",rew_start_y)
@@ -250,10 +310,22 @@ jsPsych.plugins["travel"] = (function() {
                         lag: response.rt,
                         key: response.key,
                         phase: "Harvest",
-                        reward_obs: reward_val,
+                        reward_obs: reward_obs,
                         reward_true: reward_val,
                         exit: 0,
-                        fail: false
+                        success: true,
+                        start_reward: trial.start_reward,
+                        decay: trial.decay,
+                        n_travel_steps: trial.n_travel_steps,
+                        press_success_prob_travel: trial.press_success_prob_travel,
+                        press_success_prob_harvest: trial.press_success_prob_harvest,
+                        reward_noise: trial.reward_noise,
+                        start_reward_noise: trial.start_reward_noise,
+                        time_min: trial.time_min,
+                        travel_key: trial.travel_key,
+                        harvest_key: trial.harvest_key,
+                        person_pos: person_pos,
+                        tree_pos: tree_pos
                       };
                       jsPsych.data.write(data);
 
@@ -268,14 +340,26 @@ jsPsych.plugins["travel"] = (function() {
                   phase: "Harvest",
                   reward_obs: null,
                   reward_true: reward_val,
-                  fail: true,
-                  exit: 0
+                  success: false,
+                  exit: 0,
+                  start_reward: trial.start_reward,
+                  decay: trial.decay,
+                  n_travel_steps: trial.n_travel_steps,
+                  press_success_prob_travel: trial.press_success_prob_travel,
+                  press_success_prob_harvest: trial.press_success_prob_harvest,
+                  reward_noise: trial.reward_noise,
+                  start_reward_noise: trial.start_reward_noise,
+                  time_min: trial.time_min,
+                  travel_key: trial.travel_key,
+                  harvest_key: trial.harvest_key,
+                  person_pos: person_pos,
+                  tree_pos: tree_pos,
                 };
                 jsPsych.data.write(data);
 
               }
               // set up the keypress
-              var keyboardListener = jsPsych.pluginAPI.getKeyboardResponse({
+               keyboardListener = jsPsych.pluginAPI.getKeyboardResponse({
                     callback_function: handle_harvest_response,
                     valid_responses: [harvest_key, travel_key],
                     rt_method: 'performance', // check this
@@ -315,7 +399,19 @@ jsPsych.plugins["travel"] = (function() {
                 phase: "Harvest",
                 reward_obs: null,
                 fail: null,
-                exit: 1
+                exit: 1,
+                start_reward: trial.start_reward,
+                decay: trial.decay,
+                n_travel_steps: trial.n_travel_steps,
+                press_success_prob_travel: trial.press_success_prob_travel,
+                press_success_prob_harvest: trial.press_success_prob_harvest,
+                reward_noise: trial.reward_noise,
+                start_reward_noise: trial.start_reward_noise,
+                time_min: trial.time_min,
+                travel_key: trial.travel_key,
+                harvest_key: trial.harvest_key,
+                person_pos: person_pos,
+                tree_pos: tree_pos
               };
               jsPsych.data.write(data);
 
@@ -326,7 +422,7 @@ jsPsych.plugins["travel"] = (function() {
           }           // end handle_travel_response
 
         // set up the first harvest keypress
-        var keyboardListener = jsPsych.pluginAPI.getKeyboardResponse({
+         keyboardListener = jsPsych.pluginAPI.getKeyboardResponse({
               callback_function: handle_harvest_response,
               valid_responses: [harvest_key],
               rt_method: 'performance', // check this
@@ -339,6 +435,11 @@ jsPsych.plugins["travel"] = (function() {
 
           /// stage 4 - end trial, save data,
       var end_trial = function(){
+
+        person_pos = null;
+        tree_pos = null;
+        at_tree = false;
+        reward_val = null;
 
         if (typeof keyboardListener !== 'undefined') {
               jsPsych.pluginAPI.cancelKeyboardResponse(keyboardListener);

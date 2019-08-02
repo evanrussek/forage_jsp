@@ -27,26 +27,34 @@
 
   var travel1 = {
     type: 'travel',
-    start_reward: 50,
+    start_reward: 100,
     decay: .98,
     n_travel_steps: 12,
     press_success_prob_travel: .7,
     press_success_prob_harvest: .7,
-    reward_noise: .5,
+    reward_noise: 2.5,
     start_reward_noise: 4,
-    time_min: 10
+    time_min: 2,
+    travel_key: 'f',
+    travel_key_cap: 'F',
+    harvest_key: 'j',
+    harvest_key_cap: 'J'
   }
 
   var travel2 = {
     type: 'travel',
-    start_reward: 50,
+    start_reward: 100,
     decay: .98,
-    n_travel_steps: 25,
+    n_travel_steps: 30,
     press_success_prob_travel: .7,
     press_success_prob_harvest: .7,
     reward_noise: .5,
     start_reward_noise: 4,
-    time_min: 2.5
+    time_min: 2.5,
+    travel_key: 'f',
+    travel_key_cap: 'F',
+    harvest_key: 'j',
+    harvest_key_cap: 'J'
   }
 
 
@@ -59,40 +67,41 @@
     press_success_prob_harvest: .7,
     reward_noise: .5,
     start_reward_noise: 4,
-    time_min: 2.5
+    time_min: 2.5,
+    travel_key: 'a',
+    travel_key_cap: 'A',
+    harvest_key: 'j',
+    harvest_key_cap: 'J'
   }
 
   var travel4 = {
     type: 'travel',
     start_reward: 100,
     decay: .98,
-    n_travel_steps: 25,
+    n_travel_steps: 30,
     press_success_prob_travel: .7,
     press_success_prob_harvest: .7,
     reward_noise: .5,
     start_reward_noise: 4,
-    time_min: 2.5
+    time_min: 2.5,
+    travel_key: 'a',
+    travel_key_cap: 'A',
+    harvest_key: 'j',
+    harvest_key_cap: 'J'
   }
 
-  var travel4 = {
-    type: 'travel',
-    start_reward: 100,
-    decay: .98,
-    n_travel_steps: 25,
-    press_success_prob_travel: .7,
-    press_success_prob_harvest: .7,
-    reward_noise: .5,
-    start_reward_noise: 4,
-    time_min: 2.5
+var make_text_trial = function(travel_key_cap, harvest_key_cap){
+  var text_trial = {
+    type: 'evan-display-text',
+    line_1: "Traveling to a new environment",
+    line_2: "Travel key: " + travel_key_cap + ", Harvest key: " + harvest_key_cap,
+    line_3: ""
   }
-
-var text_trial = {
-  type: 'evan-display-text',
-  line_1: "Traveling to a new environment",
-  line_2: "Travel key: A, Harvest key: J",
-  line_3: ""
+  return text_trial
 }
 
+
+ // https://raw.githack.com/evanrussek/forage_jsp/master/ex_scratch.html
 
 
 // shuffle these
@@ -105,8 +114,10 @@ var timeline = [];
 timeline.push(full_screen);
 
 for (i = 0; i < shuffled_trials.length; i++){
+  var next_trial = shuffled_trials[i];
+  var text_trial = make_text_trial(next_trial.travel_key_cap, next_trial.harvest_key_cap)
   timeline.push(text_trial);
-  timeline.push(shuffled_trials[i]);
+  timeline.push(next_trial);
 }
 
 //timeline = [full_screen, block1_node, block2_node];
