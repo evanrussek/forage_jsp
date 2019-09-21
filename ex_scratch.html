@@ -5,7 +5,7 @@
     <title>My experiment</title>
     <script src="jspsych-6.0.5/jspsych.js"></script>
     <script src="jspsych-6.0.5/plugins/jspsych-fullscreen.js"></script>
-    <script src="jspsych-6.0.5/evan_plugins/jspsych-evan-travel.js"></script>
+    <script src="jspsych-6.0.5/evan_plugins/jspsych-evan-travel-mk.js"></script>
     <script src="jspsych-6.0.5/evan_plugins/jspsych-evan-display-text.js"></script>
     <link href="jspsych-6.0.5/css/jspsych.css" rel="stylesheet" type="text/css"></link>
     <link rel='stylesheet' type='text/css' href='default_style.css'>
@@ -26,19 +26,20 @@
   };
 
   var travel1 = {
-    type: 'travel',
+    type: 'travel-mk',
     start_reward: 100,
     decay: .98,
     n_travel_steps: 12,
-    press_success_prob_travel: .7,
-    press_success_prob_harvest: .7,
+    press_success_prob_travel: 1,
+    press_success_prob_harvest: 1,
     reward_noise: 2.5,
     start_reward_noise: 4,
     time_min: 2,
     travel_key: 'f',
     travel_key_cap: 'F',
     harvest_key: 'j',
-    harvest_key_cap: 'J'
+    harvest_key_cap: 'J',
+    travel_key_seq: ['z', '/', 't', 'y']
   }
 
   var travel2 = {
@@ -104,7 +105,7 @@ var make_text_trial = function(travel_key_cap, harvest_key_cap){
 // https://raw.githack.com/evanrussek/forage_jsp/master/ex_scratch.html
 
 // shuffle these
-trials = [travel1, travel2, travel3, travel4];
+trials = [travel1];
 
 shuffled_trials = jsPsych.randomization.shuffle(trials,1);
 
