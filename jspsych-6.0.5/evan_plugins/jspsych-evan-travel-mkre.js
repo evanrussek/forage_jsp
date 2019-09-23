@@ -4,12 +4,12 @@
 
 
 // plugin to show either a photo, or a piece of text and ask which reward it was just paired with...
-jsPsych.plugins["travel-mk"] = (function() {
+jsPsych.plugins["travel-mkre"] = (function() {
 
   var plugin = {};
 
   plugin.info = {
-    name: "travel-mk",
+    name: "travel-mkre",
     parameters: {
       start_reward: {
         type:jsPsych.plugins.parameterType.FLOAT,
@@ -77,6 +77,8 @@ jsPsych.plugins["travel-mk"] = (function() {
     var harvest_key_idx = 0;
     var harvest_key_idx = harvest_key_idx % trial.harvest_key_seq.length;
     var harvest_current_key = harvest_key_seq[harvest_key_idx];
+
+    var all_keys = harvest_key_seq.concat(travel_key_seq);
 
     // more params
     var person = "Stimuli/warrior.svg";
@@ -168,121 +170,172 @@ jsPsych.plugins["travel-mk"] = (function() {
       var handle_travel_response = function(info){
 
 
+        console.log('response heard')
+        if (typeof keyboardListener !== 'undefined') {
+          jsPsych.pluginAPI.cancelKeyboardResponse(keyboardListener);
+        }
 
-          console.log('response heard')
-          if (typeof keyboardListener !== 'undefined') {
-            jsPsych.pluginAPI.cancelKeyboardResponse(keyboardListener);
-          }
-          //jsPsych.pluginAPI.clearAllTimeouts();
-          response = info;
-          //key_vec.push(response.key)
-          //lag_vec.push(response.rt);
+        response = info;
+        var choice_char = jsPsych.pluginAPI.convertKeyCodeToKeyCharacter(response.key);
 
+        // if they got the wrong key, just record the data and recall the response handler.
+        if (choice_char != travel_current_key){
+          console.log('wrong key')
+
+          var data = {
+            phase: "TRAVEL",
+            lag: response.rt,
+            key: response.key,
+            start_reward: trial.start_reward,
+            decay: trial.decay,
+            n_travel_steps: trial.n_travel_steps,
+            press_success_prob_travel: trial.press_success_prob_travel,
+            press_success_prob_harvest: trial.press_success_prob_harvest,
+            reward_noise: trial.reward_noise,
+            start_reward_noise: trial.start_reward_noise,
+            time_min: trial.time_min,
+            travel_key_seq: trial.travel_key_seq,
+            harvest_key_seq: trial.harvest_key_seq,
+            person_pos: person_pos,
+            tree_pos: tree_pos,
+            success: false,
+            correct_key: false,
+            round: round
+          };
+
+          jsPsych.data.write(data);
+
+
+          // set up the keypress
+          keyboardListener = jsPsych.pluginAPI.getKeyboardResponse({
+                callback_function: handle_travel_response,
+                valid_responses: travel_key_seq,
+                rt_method: 'performance', // check this
+                persist: false,
+                allow_held_key: false
+            });
+
+        } // end case for where they pressed the wrong key
+        else{ // if they got the right key
+          console.log('correct key')
+          // update the sequence ...
           // update current key
           travel_key_idx = (travel_key_idx + 1) % travel_key_seq.length;
           travel_current_key = travel_key_seq[travel_key_idx];
-          console.log(travel_key_idx)
-          console.log(travel_current_key)
+          // check if the move fails - then same thing, except we update the sequecne
+          if (Math.random() > press_success_prob_travel){
+            console.log('move failed')
+             var data = {
+               phase: "TRAVEL",
+               lag: response.rt,
+               key: response.key,
+               start_reward: trial.start_reward,
+               decay: trial.decay,
+               n_travel_steps: trial.n_travel_steps,
+               press_success_prob_travel: trial.press_success_prob_travel,
+               press_success_prob_harvest: trial.press_success_prob_harvest,
+               reward_noise: trial.reward_noise,
+               start_reward_noise: trial.start_reward_noise,
+               time_min: trial.time_min,
+               travel_key_seq: trial.travel_key_seq,
+               harvest_key_seq: trial.harvest_key_seq,
+               person_pos: person_pos,
+               tree_pos: tree_pos,
+               success: false,
+               correct_key: true,
+               round: round
+             };
+
+             jsPsych.data.write(data);
+
+             // set up the keypress
+             keyboardListener = jsPsych.pluginAPI.getKeyboardResponse({
+                   callback_function: handle_travel_response,
+                   valid_responses: travel_key_seq,
+                   rt_method: 'performance', // check this
+                   persist: false,
+                   allow_held_key: false
+               });
+           } // end check for move failing
+           else{ // move succeeded
+             console.log('move succeeded')
+
+             // if they got the right key, and it was successful, move the person forward
+             var data = {
+               phase: "TRAVEL",
+               lag: response.rt,
+               key: response.key,
+               start_reward: trial.start_reward,
+               decay: trial.decay,
+               n_travel_steps: trial.n_travel_steps,
+               press_success_prob_travel: trial.press_success_prob_travel,
+               press_success_prob_harvest: trial.press_success_prob_harvest,
+               reward_noise: trial.reward_noise,
+               start_reward_noise: trial.start_reward_noise,
+               time_min: trial.time_min,
+               travel_key_seq: trial.travel_prompt,
+               harvest_key_seq: trial.harvest_prompt,
+               person_pos: person_pos,
+               tree_pos: tree_pos,
+               success: true,
+               correct_key: true,
+               round: round
+             };
+
+             jsPsych.data.write(data);
 
 
+             person_pos = person_pos+1;
+             if (person_pos > n_steps_screen){
+               person_pos = 1;
+             }
+             person_x_pos_middle = min_pos + person_pos*increment;
+             d3.select(".person")
+               .attr("x", person_x_pos_middle - person_w/2)
 
-          if (Math.random() < press_success_prob_travel){
+             if (tree_pos >= person_pos){  // check if we're at the tree
+                at_tree = ((tree_pos - person_pos) <= 2);
+             }else{
+                at_tree = ((n_steps_screen + tree_pos - person_pos) <=  2);
+              }
 
-            var data = {
-              phase: "TRAVEL",
-              lag: response.rt,
-              key: response.key,
-              start_reward: trial.start_reward,
-              decay: trial.decay,
-              n_travel_steps: trial.n_travel_steps,
-              press_success_prob_travel: trial.press_success_prob_travel,
-              press_success_prob_harvest: trial.press_success_prob_harvest,
-              reward_noise: trial.reward_noise,
-              start_reward_noise: trial.start_reward_noise,
-              time_min: trial.time_min,
-              travel_key_seq: trial.travel_prompt,
-              harvest_key_seq: trial.harvest_prompt,
-              person_pos: person_pos,
-              tree_pos: tree_pos,
-              success: true,
-              round: round
-            };
+              if (at_tree){ // if we're at the tree, change the color and call the harvest phase.
+                d3.select(".treecirc").style("fill", "yellow");
+                console.log('at tree')
+                console.log(person_pos)
+                console.log(tree_pos)
 
-            jsPsych.data.write(data);
+                // reset the travel key
+                travel_key_idx = 0;
+                travel_current_key = travel_key_seq[travel_key_idx];
 
+                harvest_phase();
+              }else{
+                // otherwise, re-call the keyboard listener for another travel phase
+                // set up the keypress
+                 keyboardListener = jsPsych.pluginAPI.getKeyboardResponse({
+                    callback_function: handle_travel_response,
+                    valid_responses: travel_key_seq,
+                    rt_method: 'performance', // check this
+                    persist: false,
+                    allow_held_key: false
+                  });
 
-            person_pos = person_pos+1;
-            if (person_pos > n_steps_screen){
-              person_pos = 1;
-            }
-            person_x_pos_middle = min_pos + person_pos*increment;
-            d3.select(".person")
-              .attr("x", person_x_pos_middle - person_w/2)
+              } // end we're not at the tree
+            } // end successful move if
+          } // end correct key
+        } // end handle travel response
+        // need a keyboard listener for the first time
+        // set up the keypress
+         keyboardListener = jsPsych.pluginAPI.getKeyboardResponse({
+            callback_function: handle_travel_response,
+            valid_responses: travel_key_seq,
+            rt_method: 'performance', // check this
+            persist: false,
+            allow_held_key: false
+          });
+    } //end travel phase
 
-
-          if (tree_pos >= person_pos){
-            at_tree = ((tree_pos - person_pos) <= 2);
-          }else{
-            at_tree = ((n_steps_screen + tree_pos - person_pos) <=  2);
-          }
-
-          if (at_tree){
-            d3.select(".treecirc").style("fill", "yellow");
-            console.log('at tree')
-            console.log(person_pos)
-            console.log(tree_pos)
-
-            // reset the travel key
-            travel_key_idx = 0;
-            travel_current_key = travel_key_seq[travel_key_idx];
-
-            harvest_phase()
-          }}
-          else{ // the move failed
-            var data = {
-              phase: "TRAVEL",
-              lag: response.rt,
-              key: response.key,
-              start_reward: trial.start_reward,
-              decay: trial.decay,
-              n_travel_steps: trial.n_travel_steps,
-              press_success_prob_travel: trial.press_success_prob_travel,
-              press_success_prob_harvest: trial.press_success_prob_harvest,
-              reward_noise: trial.reward_noise,
-              start_reward_noise: trial.start_reward_noise,
-              time_min: trial.time_min,
-              travel_key_seq: trial.travel_key_seq,
-              harvest_key_seq: trial.harvest_key_seq,
-              person_pos: person_pos,
-              tree_pos: tree_pos,
-              success: false,
-              round: round
-            };
-
-            jsPsych.data.write(data);
-
-
-            // set up the keypress
-            keyboardListener = jsPsych.pluginAPI.getKeyboardResponse({
-                  callback_function: handle_travel_response,
-                  valid_responses: [travel_current_key],
-                  rt_method: 'performance', // check this
-                  persist: false,
-                  allow_held_key: false
-              });
-          }
-      } // end handle_travel_response
-
-      // set up the keypress
-       keyboardListener = jsPsych.pluginAPI.getKeyboardResponse({
-          callback_function: handle_travel_response,
-          valid_responses: [travel_current_key],
-          rt_method: 'performance', // check this
-          persist: false,
-          allow_held_key: false
-        });
-
-    } // end the travel phase
 
     var harvest_phase = function(){ // first press must be harvest
 
@@ -313,96 +366,8 @@ jsPsych.plugins["travel-mk"] = (function() {
 
             reward_obs = reward_val + Math.randomGaussian(0,trial.reward_noise);
 
-            console.log('harvest_key ' + harvest_current_key)
-            if (choice_char == harvest_current_key){
-              // update the harvest key
-              harvest_key_idx = (harvest_key_idx + 1) % trial.harvest_key_seq.length;
-              harvest_current_key = harvest_key_seq[harvest_key_idx];
 
-             // chose to harvest
-              if (Math.random() < press_success_prob_harvest){
-                // show the money falling
-                var rew_im = d3.select("svg").append("text")
-                          .attr("class", "reward")
-                          .attr("x",  rew_x)
-                          .attr("y",rew_start_y)
-                          .attr("font-family","sans-serif")
-                          .attr("font-weight","normal")
-                          .attr("font-size",person_h/2)
-                          .attr("text-anchor","middle")
-                          .attr("fill", "red")
-                          .style("opacity",1)
-                          .text(Math.round(reward_obs))
-
-                  rew_im.transition()
-                      .attr("y", rew_end_y)
-                      .style("opacity",0)
-                      //.ease("easeLinear")
-                      .duration(800)
-                      .remove()
-
-                      var data = {
-                        lag: response.rt,
-                        key: response.key,
-                        phase: "Harvest",
-                        reward_obs: reward_obs,
-                        reward_true: reward_val,
-                        exit: 0,
-                        success: true,
-                        start_reward: trial.start_reward,
-                        decay: trial.decay,
-                        n_travel_steps: trial.n_travel_steps,
-                        press_success_prob_travel: trial.press_success_prob_travel,
-                        press_success_prob_harvest: trial.press_success_prob_harvest,
-                        reward_noise: trial.reward_noise,
-                        start_reward_noise: trial.start_reward_noise,
-                        time_min: trial.time_min,
-                        travel_key: trial.travel_prompt,
-                        harvest_key: trial.harvest_prompt,
-                        person_pos: person_pos,
-                        tree_pos: tree_pos,
-                        round: round
-                      };
-                      jsPsych.data.write(data);
-
-
-                // decay the reward value
-                reward_val = decay*reward_val;
-              } // need an else for if choice fails
-              else{ // harvest choice failed
-                var data = {
-                  lag: response.rt,
-                  key: response.key,
-                  phase: "Harvest",
-                  reward_obs: null,
-                  reward_true: reward_val,
-                  success: false,
-                  exit: 0,
-                  start_reward: trial.start_reward,
-                  decay: trial.decay,
-                  n_travel_steps: trial.n_travel_steps,
-                  press_success_prob_travel: trial.press_success_prob_travel,
-                  press_success_prob_harvest: trial.press_success_prob_harvest,
-                  reward_noise: trial.reward_noise,
-                  start_reward_noise: trial.start_reward_noise,
-                  time_min: trial.time_min,
-                  person_pos: person_pos,
-                  tree_pos: tree_pos,
-                  round: round
-                };
-                jsPsych.data.write(data);
-
-              }
-              // set up the keypress
-               keyboardListener = jsPsych.pluginAPI.getKeyboardResponse({
-                    callback_function: handle_harvest_response,
-                    valid_responses: [harvest_current_key, travel_current_key],
-                    rt_method: 'performance', // check this
-                    persist: false,
-                    allow_held_key: false
-                  });
-            } // if choice was to leave
-            else{
+            if (choice_char == travel_current_key){ // if travel key was pressed...
               travel_key_idx = (travel_key_idx + 1) % trial.travel_key_seq.length;
               travel_current_key = travel_key_seq[travel_key_idx];
 
@@ -456,9 +421,141 @@ jsPsych.plugins["travel-mk"] = (function() {
               round = round + 1;
               travel_phase();
                 // move the tree and call the travel function...
-            }
+            } // end if travel key was pressed
+            else{ // if travel key was not pressed
 
-          }           // end handle_travel_response
+
+            if (choice_char == harvest_current_key){ // if current harvest key was pressed
+              console.log('harvest key pressed')
+              // update the harvest key
+              harvest_key_idx = (harvest_key_idx + 1) % trial.harvest_key_seq.length;
+              harvest_current_key = harvest_key_seq[harvest_key_idx];
+
+             // chose to harvest
+              if (Math.random() < press_success_prob_harvest){ // if the press succeeded
+                // show the money falling
+                var rew_im = d3.select("svg").append("text")
+                          .attr("class", "reward")
+                          .attr("x",  rew_x)
+                          .attr("y",rew_start_y)
+                          .attr("font-family","sans-serif")
+                          .attr("font-weight","normal")
+                          .attr("font-size",person_h/2)
+                          .attr("text-anchor","middle")
+                          .attr("fill", "red")
+                          .style("opacity",1)
+                          .text(Math.round(reward_obs))
+
+                  rew_im.transition()
+                      .attr("y", rew_end_y)
+                      .style("opacity",0)
+                      //.ease("easeLinear")
+                      .duration(800)
+                      .remove()
+
+                      var data = {
+                        lag: response.rt,
+                        key: response.key,
+                        phase: "Harvest",
+                        reward_obs: reward_obs,
+                        reward_true: reward_val,
+                        exit: 0,
+                        success: true,
+                        start_reward: trial.start_reward,
+                        decay: trial.decay,
+                        n_travel_steps: trial.n_travel_steps,
+                        press_success_prob_travel: trial.press_success_prob_travel,
+                        press_success_prob_harvest: trial.press_success_prob_harvest,
+                        reward_noise: trial.reward_noise,
+                        start_reward_noise: trial.start_reward_noise,
+                        time_min: trial.time_min,
+                        travel_key: trial.travel_prompt,
+                        harvest_key: trial.harvest_prompt,
+                        person_pos: person_pos,
+                        correct_key: true,
+                        tree_pos: tree_pos,
+                        round: round
+                      };
+                      jsPsych.data.write(data);
+
+
+                // decay the reward value
+                reward_val = decay*reward_val;
+              } // end press succeeded case
+              else{ // harvest key pressed, but the choice failed...
+                var data = {
+                  lag: response.rt,
+                  key: response.key,
+                  phase: "Harvest",
+                  reward_obs: null,
+                  reward_true: reward_val,
+                  success: false,
+                  exit: 0,
+                  start_reward: trial.start_reward,
+                  decay: trial.decay,
+                  n_travel_steps: trial.n_travel_steps,
+                  press_success_prob_travel: trial.press_success_prob_travel,
+                  press_success_prob_harvest: trial.press_success_prob_harvest,
+                  reward_noise: trial.reward_noise,
+                  start_reward_noise: trial.start_reward_noise,
+                  time_min: trial.time_min,
+                  person_pos: person_pos,
+                  tree_pos: tree_pos,
+                  correct_key: true,
+                                    round: round
+                };
+                jsPsych.data.write(data);
+              }
+              // wait for data regardless of whether key press worked
+               keyboardListener = jsPsych.pluginAPI.getKeyboardResponse({
+                    callback_function: handle_harvest_response,
+                    valid_responses: all_keys,//[harvest_current_key, travel_current_key],
+                    rt_method: 'performance', // check this
+                    persist: false,
+                    allow_held_key: false
+                  });
+            } // end if correct harvest key pressed...
+            else{ // if wrong key in sequence was pressed, record it but don't update and recall keyboard listener
+
+              console.log('wrong key')
+
+              var data = {
+                phase: "HARVEST",
+                lag: response.rt,
+                key: response.key,
+                start_reward: trial.start_reward,
+                decay: trial.decay,
+                n_travel_steps: trial.n_travel_steps,
+                press_success_prob_travel: trial.press_success_prob_travel,
+                press_success_prob_harvest: trial.press_success_prob_harvest,
+                reward_noise: trial.reward_noise,
+                start_reward_noise: trial.start_reward_noise,
+                time_min: trial.time_min,
+                travel_key_seq: trial.travel_key_seq,
+                harvest_key_seq: trial.harvest_key_seq,
+                person_pos: person_pos,
+                tree_pos: tree_pos,
+                success: false,
+                correct_key: false,
+                round: round
+              };
+
+              jsPsych.data.write(data);
+
+
+              // set up the keypress
+               keyboardListener = jsPsych.pluginAPI.getKeyboardResponse({
+                    callback_function: handle_harvest_response,
+                    valid_responses: all_keys,// [harvest_current_key, travel_current_key],
+                    rt_method: 'performance', // check this
+                    persist: false,
+                    allow_held_key: false
+                  });
+
+            }
+          } // end travel key not pressed
+
+        }           // end handle_harvest_response
 
 
         // reset harvest key to 0

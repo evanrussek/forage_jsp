@@ -5,7 +5,7 @@
     <title>My experiment</title>
     <script src="jspsych-6.0.5/jspsych.js"></script>
     <script src="jspsych-6.0.5/plugins/jspsych-fullscreen.js"></script>
-    <script src="jspsych-6.0.5/evan_plugins/jspsych-evan-travel-mk.js"></script>
+    <script src="jspsych-6.0.5/evan_plugins/jspsych-evan-travel-mkre.js"></script>
     <script src="jspsych-6.0.5/evan_plugins/jspsych-evan-display-text.js"></script>
     <link href="jspsych-6.0.5/css/jspsych.css" rel="stylesheet" type="text/css"></link>
     <link rel='stylesheet' type='text/css' href='default_style.css'>
@@ -15,7 +15,7 @@
   <body></body>
   <script type="text/javascript" src="parameters.js"></script>
   <script>
-
+/// todo: make instructions, let particpants know how many points they collected. 
   /* */
   /* create timeline */
   var timeline = [];
@@ -25,70 +25,48 @@
     fullscreen_mode: true
   };
 
-  var travel1 = {
-    type: 'travel-mk',
-    start_reward: 100,
-    decay: .98,
-    n_travel_steps: 12,
-    press_success_prob_travel: 1,
-    press_success_prob_harvest: 1,
-    reward_noise: 2.5,
-    start_reward_noise: 4,
-    time_min: 2,
-    travel_key_seq: ['z', '/', 't', 'y'],
-    travel_prompt: ["(Z -> / -> T -> Y)"],
-    harvest_key_seq: ['f', 'j', 'f', 'j'],
-    harvest_prompt: ["(F -> J -> F -> J)"]
-  }
 
-  var travel2 = {
-    type: 'travel',
-    start_reward: 100,
-    decay: .98,
-    n_travel_steps: 30,
-    press_success_prob_travel: .7,
-    press_success_prob_harvest: .7,
-    reward_noise: .5,
-    start_reward_noise: 4,
-    time_min: 2.5,
-    travel_key: 'f',
-    travel_key_cap: 'F',
-    harvest_key: 'j',
-    harvest_key_cap: 'J'
-  }
+// we'll vary the travel amount?
+var travel_amounts = [8, 16, 32];
+var harvest_key_seq = ['f', 'j', 'f', 'j'];
+var harvest_prompt = ["(F -> J -> F -> J)"];
 
+var travel_key_seq_easy = ['d', 'k', 'd', 'k'];
+var travel_prompt_easy = ["(D -> K -> D -> K)"];
+var travel_key_seq_hard =['z', '/', 't', 'y'];
+var travel_prompt_hard = ["(Z -> / -> T -> Y)"];
 
-  var travel3 = {
-    type: 'travel',
-    start_reward: 100,
-    decay: .98,
-    n_travel_steps: 12,
-    press_success_prob_travel: .7,
-    press_success_prob_harvest: .7,
-    reward_noise: .5,
-    start_reward_noise: 4,
-    time_min: 2.5,
-    travel_key: 'a',
-    travel_key_cap: 'A',
-    harvest_key: 'j',
-    harvest_key_cap: 'J'
-  }
+// need to record errors...
 
-  var travel4 = {
-    type: 'travel',
-    start_reward: 100,
-    decay: .98,
-    n_travel_steps: 30,
-    press_success_prob_travel: .7,
-    press_success_prob_harvest: .7,
-    reward_noise: .5,
-    start_reward_noise: 4,
-    time_min: 2.5,
-    travel_key: 'a',
-    travel_key_cap: 'A',
-    harvest_key: 'j',
-    harvest_key_cap: 'J'
+var this_round_trials = [];
+for (d_idx = 0; d_idx < 2; d_idx++){
+  for (ta_idx = 0; ta_idx < travel_amounts.length; ta_idx++){
+    var this_travel_amount = travel_amounts[ta_idx];
+    if (d_idx == 0){
+        var this_travel_key_seq = travel_key_seq_easy;
+        var this_travel_prompt = travel_prompt_easy;
+    }else{
+      var this_travel_key_seq = travel_key_seq_hard;
+      var this_travel_prompt = travel_prompt_hard;
+    }
+    var this_trial = {
+      type: 'travel-mkre',
+      start_reward: 100,
+      decay: .98,
+      n_travel_steps: this_travel_amount,
+      press_success_prob_travel: .7,
+      press_success_prob_harvest: .7,
+      reward_noise: 2.5,
+      start_reward_noise: 4,
+      time_min: 2,
+      travel_key_seq:this_travel_key_seq,
+      travel_prompt: this_travel_prompt,
+      harvest_key_seq: harvest_key_seq,
+      harvest_prompt: harvest_prompt
+    }
+    this_round_trials.push(this_trial)
   }
+}
 
 var make_text_trial = function(travel_prompt, harvest_prompt){
   var text_trial = {
@@ -100,38 +78,32 @@ var make_text_trial = function(travel_prompt, harvest_prompt){
   return text_trial
 }
 
-
-// https://raw.githack.com/evanrussek/forage_jsp/master/ex_scratch.html
-
 // shuffle these
-trials = [travel1];
+trials = this_round_trials;
 
-shuffled_trials = jsPsych.randomization.shuffle(trials,1);
+// shuffled_trials = jsPsych.randomization.shuffle(trials,1);
+
+// need to also record errors
 
 /* create timeline */
 var timeline = [];
 timeline.push(full_screen);
 
-for (i = 0; i < shuffled_trials.length; i++){
-  var next_trial = shuffled_trials[i];
+for (i = 0; i < trials.length; i++){
+  var next_trial = trials[i];
   var text_trial = make_text_trial(next_trial.travel_prompt, next_trial.harvest_prompt)
   timeline.push(text_trial);
   timeline.push(next_trial);
 }
 
-//timeline = [full_screen, block1_node, block2_node];
-//timeline = [full_screen].concat(shuffled_trials);
-//timeline = [full_screen button_trial];
-//timeline = [full_screen,inst_trial];
-//timeline = [full_screen, choice_trial, choice_trial, choice_trial, choice_trial];
-  /* start the experiment */
-  jsPsych.init({
-    timeline: timeline,
-    show_preload_progress_bar: false,
-    on_finish: function() {
-      //console.log('done')
-      jsPsych.data.get().localSave('csv','test_res.csv');
-    //on_finish: saveData
+/* start the experiment */
+jsPsych.init({
+  timeline: timeline,
+  show_preload_progress_bar: false,
+  on_finish: function() {
+    //console.log('done')
+    jsPsych.data.get().localSave('csv','test_res.csv');
+  //on_finish: saveData
   }
 });
 
