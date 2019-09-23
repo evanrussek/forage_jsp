@@ -47,20 +47,16 @@ jsPsych.plugins["travel-mk"] = (function() {
         type: jsPsych.plugins.parameterType.STRING,
         default: undefined
       },
-      travel_key:{
-        type:jsPsych.plugins.parameterType.STRING,
+      harvest_key_seq:{
+        type: jsPsych.plugins.parameterType.STRING,
         default: undefined
       },
-      travel_key_cap:{
-        type:jsPsych.plugins.parameterType.STRING,
-        default: undefined
-      } ,
-      harvest_key:{
-        type:jsPsych.plugins.parameterType.STRING,
+      travel_prompt:{
+        type: jsPsych.plugins.parameterType.STRING,
         default: undefined
       },
-      harvest_key_cap:{
-        type:jsPsych.plugins.parameterType.STRING,
+      harvest_prompt:{
+        type: jsPsych.plugins.parameterType.STRING,
         default: undefined
       }
   }}
@@ -69,10 +65,17 @@ jsPsych.plugins["travel-mk"] = (function() {
 
     par = define_parameters('trial');
 
-    var key_seq = trial.travel_key_seq;
-    var key_idx = 0;
-    var key_idx = key_idx % trial.travel_key_seq.length;
-    var current_key = key_seq[key_idx];
+    // start up travel key sequence and our place in it
+    var travel_key_seq = trial.travel_key_seq;
+    var travel_key_idx = 0;
+    var travel_key_idx = travel_key_idx % trial.travel_key_seq.length;
+    var travel_current_key = travel_key_seq[travel_key_idx];
+
+    // start up harvest key sequence and our place in it
+    var harvest_key_seq = trial.harvest_key_seq;
+    var harvest_key_idx = 0;
+    var harvest_key_idx = harvest_key_idx % trial.harvest_key_seq.length;
+    var harvest_current_key = harvest_key_seq[harvest_key_idx];
 
     // more params
     var person = "Stimuli/warrior.svg";
@@ -101,10 +104,7 @@ jsPsych.plugins["travel-mk"] = (function() {
     var press_success_prob_travel = trial.press_success_prob_travel;
     var press_success_prob_harvest = trial.press_success_prob_harvest;
 
-    var travel_key = trial.travel_key;
-    var travel_key_cap = trial.travel_key_cap;
-    var harvest_key = trial.harvest_key;
-    var harvest_key_cap = trial.harvest_key_cap;
+
     var show_prompt = true;
 
 
@@ -156,7 +156,8 @@ jsPsych.plugins["travel-mk"] = (function() {
     var travel_phase = function(){
 
       if (show_prompt){
-          var text = 'Press ' + travel_key_cap + ' to TRAVEL to next tree.';
+          //var text = 'Press ' + travel_key_cap + ' to TRAVEL to next tree.';
+          var text = 'Press sequence ' + trial.travel_prompt + ' to Travel to the next tree.'
           d3.select(".prompt").text(text);
         }
 
@@ -174,10 +175,10 @@ jsPsych.plugins["travel-mk"] = (function() {
           //lag_vec.push(response.rt);
 
           // update current key
-          key_idx = (key_idx + 1) % key_seq.length;
-          current_key = key_seq[key_idx];
-          console.log(key_idx)
-          console.log(current_key)
+          travel_key_idx = (travel_key_idx + 1) % travel_key_seq.length;
+          travel_current_key = travel_key_seq[travel_key_idx];
+          console.log(travel_key_idx)
+          console.log(travel_current_key)
 
 
 
@@ -195,8 +196,8 @@ jsPsych.plugins["travel-mk"] = (function() {
               reward_noise: trial.reward_noise,
               start_reward_noise: trial.start_reward_noise,
               time_min: trial.time_min,
-              travel_key: trial.travel_key,
-              harvest_key: trial.harvest_key,
+              travel_key_seq: trial.travel_prompt,
+              harvest_key_seq: trial.harvest_prompt,
               person_pos: person_pos,
               tree_pos: tree_pos,
               success: true
@@ -225,6 +226,11 @@ jsPsych.plugins["travel-mk"] = (function() {
             console.log('at tree')
             console.log(person_pos)
             console.log(tree_pos)
+
+            // reset the travel key
+            travel_key_idx = 0;
+            travel_current_key = travel_key_seq[travel_key_idx];
+
             harvest_phase()
           } else{
             var data = {
@@ -239,8 +245,8 @@ jsPsych.plugins["travel-mk"] = (function() {
               reward_noise: trial.reward_noise,
               start_reward_noise: trial.start_reward_noise,
               time_min: trial.time_min,
-              travel_key: trial.travel_key,
-              harvest_key: trial.harvest_key,
+              travel_key_seq: trial.travel_key_seq,
+              harvest_key_seq: trial.harvest_key_seq,
               person_pos: person_pos,
               tree_pos: tree_pos,
               success: false
@@ -252,7 +258,7 @@ jsPsych.plugins["travel-mk"] = (function() {
             // set up the keypress
             keyboardListener = jsPsych.pluginAPI.getKeyboardResponse({
                   callback_function: handle_travel_response,
-                  valid_responses: [current_key],
+                  valid_responses: [travel_current_key],
                   rt_method: 'performance', // check this
                   persist: false,
                   allow_held_key: false
@@ -263,7 +269,7 @@ jsPsych.plugins["travel-mk"] = (function() {
       // set up the keypress
        keyboardListener = jsPsych.pluginAPI.getKeyboardResponse({
           callback_function: handle_travel_response,
-          valid_responses: [current_key],
+          valid_responses: [travel_current_key],
           rt_method: 'performance', // check this
           persist: false,
           allow_held_key: false
@@ -274,7 +280,7 @@ jsPsych.plugins["travel-mk"] = (function() {
     var harvest_phase = function(){ // first press must be harvest
 
       if (show_prompt){
-          var text = 'Press '+ harvest_key_cap + ' to HARVEST or ' + travel_key_cap + ' to TRAVEL to next tree.';
+          var text = 'Press sequence '+ trial.harvest_prompt + ' to HARVEST or ' + trial.travel_prompt + ' to TRAVEL to next tree.';
           d3.select(".prompt").text(text)
         }
 
@@ -286,6 +292,7 @@ jsPsych.plugins["travel-mk"] = (function() {
       var rew_end_y = person_y;
 
       var handle_harvest_response =   function(info){
+
             console.log('harvest response heard')
             //jsPsych.pluginAPI.clearAllTimeouts();
             // kill keyboard listeners
@@ -299,7 +306,13 @@ jsPsych.plugins["travel-mk"] = (function() {
 
             reward_obs = reward_val + Math.randomGaussian(0,trial.reward_noise);
 
-            if (choice_char == harvest_key){
+            console.log('harvest_key ' + harvest_current_key)
+            if (choice_char == harvest_current_key){
+              // update the harvest key
+              harvest_key_idx = (harvest_key_idx + 1) % trial.harvest_key_seq.length;
+              harvest_current_key = harvest_key_seq[harvest_key_idx];
+
+             // chose to harvest
               if (Math.random() < press_success_prob_harvest){
                 // show the money falling
                 var rew_im = d3.select("svg").append("text")
@@ -337,8 +350,8 @@ jsPsych.plugins["travel-mk"] = (function() {
                         reward_noise: trial.reward_noise,
                         start_reward_noise: trial.start_reward_noise,
                         time_min: trial.time_min,
-                        travel_key: trial.travel_key,
-                        harvest_key: trial.harvest_key,
+                        travel_key: trial.travel_prompt,
+                        harvest_key: trial.harvest_prompt,
                         person_pos: person_pos,
                         tree_pos: tree_pos
                       };
@@ -365,8 +378,6 @@ jsPsych.plugins["travel-mk"] = (function() {
                   reward_noise: trial.reward_noise,
                   start_reward_noise: trial.start_reward_noise,
                   time_min: trial.time_min,
-                  travel_key: trial.travel_key,
-                  harvest_key: trial.harvest_key,
                   person_pos: person_pos,
                   tree_pos: tree_pos,
                 };
@@ -376,13 +387,16 @@ jsPsych.plugins["travel-mk"] = (function() {
               // set up the keypress
                keyboardListener = jsPsych.pluginAPI.getKeyboardResponse({
                     callback_function: handle_harvest_response,
-                    valid_responses: [harvest_key, travel_key],
+                    valid_responses: [harvest_current_key, travel_current_key],
                     rt_method: 'performance', // check this
                     persist: false,
                     allow_held_key: false
                   });
             } // if choice was to leave
             else{
+              travel_key_idx = (travel_key_idx + 1) % trial.travel_key_seq.length;
+              travel_current_key = travel_key_seq[travel_key_idx];
+
               // move the tree
               tree_pos = ((person_pos + n_travel_steps + 2) % n_steps_screen);
               tree_x_pos_middle = min_pos + tree_pos*increment;
@@ -423,8 +437,8 @@ jsPsych.plugins["travel-mk"] = (function() {
                 reward_noise: trial.reward_noise,
                 start_reward_noise: trial.start_reward_noise,
                 time_min: trial.time_min,
-                travel_key: trial.travel_key,
-                harvest_key: trial.harvest_key,
+                travel_key: trial.travel_prompt,
+                harvest_key: trial.harvest_prompt,
                 person_pos: person_pos,
                 tree_pos: tree_pos
               };
@@ -436,10 +450,14 @@ jsPsych.plugins["travel-mk"] = (function() {
 
           }           // end handle_travel_response
 
+
+        // reset harvest key to 0
+        harvest_key_idx = 0;
+        harvest_current_key = trial.harvest_key_seq[harvest_key_idx];
         // set up the first harvest keypress
          keyboardListener = jsPsych.pluginAPI.getKeyboardResponse({
               callback_function: handle_harvest_response,
-              valid_responses: [harvest_key],
+              valid_responses: [harvest_current_key],
               rt_method: 'performance', // check this
               persist: false,
               allow_held_key: false

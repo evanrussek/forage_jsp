@@ -35,11 +35,10 @@
     reward_noise: 2.5,
     start_reward_noise: 4,
     time_min: 2,
-    travel_key: 'f',
-    travel_key_cap: 'F',
-    harvest_key: 'j',
-    harvest_key_cap: 'J',
-    travel_key_seq: ['z', '/', 't', 'y']
+    travel_key_seq: ['z', '/', 't', 'y'],
+    travel_prompt: ["(Z -> / -> T -> Y)"],
+    harvest_key_seq: ['f', 'j', 'f', 'j'],
+    harvest_prompt: ["(F -> J -> F -> J)"]
   }
 
   var travel2 = {
@@ -91,11 +90,11 @@
     harvest_key_cap: 'J'
   }
 
-var make_text_trial = function(travel_key_cap, harvest_key_cap){
+var make_text_trial = function(travel_prompt, harvest_prompt){
   var text_trial = {
     type: 'evan-display-text',
     line_1: "Traveling to a new environment",
-    line_2: "Travel key: " + travel_key_cap + ", Harvest key: " + harvest_key_cap,
+    line_2: "Travel sequence: " + travel_prompt + ", Harvest sequence: " + harvest_prompt,
     line_3: ""
   }
   return text_trial
@@ -115,7 +114,7 @@ timeline.push(full_screen);
 
 for (i = 0; i < shuffled_trials.length; i++){
   var next_trial = shuffled_trials[i];
-  var text_trial = make_text_trial(next_trial.travel_key_cap, next_trial.harvest_key_cap)
+  var text_trial = make_text_trial(next_trial.travel_prompt, next_trial.harvest_prompt)
   timeline.push(text_trial);
   timeline.push(next_trial);
 }
