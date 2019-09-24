@@ -62,6 +62,7 @@ jsPsych.plugins["travel-mkre"] = (function() {
   }}
 
   plugin.trial = function(display_element, trial) {
+    var total_points = 0;
 
     par = define_parameters('trial');
 
@@ -200,7 +201,8 @@ jsPsych.plugins["travel-mkre"] = (function() {
             tree_pos: tree_pos,
             success: false,
             correct_key: false,
-            round: round
+            round: round,
+            total_points: total_points
           };
 
           jsPsych.data.write(data);
@@ -243,7 +245,8 @@ jsPsych.plugins["travel-mkre"] = (function() {
                tree_pos: tree_pos,
                success: false,
                correct_key: true,
-               round: round
+               round: round,
+               total_points: total_points
              };
 
              jsPsych.data.write(data);
@@ -279,7 +282,8 @@ jsPsych.plugins["travel-mkre"] = (function() {
                tree_pos: tree_pos,
                success: true,
                correct_key: true,
-               round: round
+               round: round,
+               total_points: total_points
              };
 
              jsPsych.data.write(data);
@@ -415,7 +419,8 @@ jsPsych.plugins["travel-mkre"] = (function() {
                 harvest_key: trial.harvest_prompt,
                 person_pos: person_pos,
                 tree_pos: tree_pos,
-                round: round
+                round: round,
+                total_points: total_points
               };
               jsPsych.data.write(data);
               round = round + 1;
@@ -452,6 +457,8 @@ jsPsych.plugins["travel-mkre"] = (function() {
                       //.ease("easeLinear")
                       .duration(800)
                       .remove()
+                  // update total points
+                    total_points = Math.round(total_points + reward_obs);
 
                       var data = {
                         lag: response.rt,
@@ -474,7 +481,8 @@ jsPsych.plugins["travel-mkre"] = (function() {
                         person_pos: person_pos,
                         correct_key: true,
                         tree_pos: tree_pos,
-                        round: round
+                        round: round,
+                        total_points: total_points
                       };
                       jsPsych.data.write(data);
 
@@ -502,7 +510,8 @@ jsPsych.plugins["travel-mkre"] = (function() {
                   person_pos: person_pos,
                   tree_pos: tree_pos,
                   correct_key: true,
-                                    round: round
+                  round: round,
+                  total_points: total_points
                 };
                 jsPsych.data.write(data);
               }
@@ -537,7 +546,8 @@ jsPsych.plugins["travel-mkre"] = (function() {
                 tree_pos: tree_pos,
                 success: false,
                 correct_key: false,
-                round: round
+                round: round,
+                total_points: total_points
               };
 
               jsPsych.data.write(data);
@@ -587,7 +597,7 @@ jsPsych.plugins["travel-mkre"] = (function() {
         d3.select('svg').remove()
 
         var trial_data = {
-              // need to add timing parameters
+              total_points: total_points
         };
 
         jsPsych.finishTrial(trial_data);

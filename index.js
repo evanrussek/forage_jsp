@@ -17,6 +17,8 @@ var travel_key_seq_hard =['z', '/', 't', 'y'];
 var travel_prompt_hard = ["(Z -> / -> T -> Y)"];
 var n_rounds = 2;
 
+var total_points_arr = [];
+
 var forage_trials = [];
 for (r_idx = 0; r_idx < n_rounds; r_idx++){
   var this_round_trials = [];
@@ -36,10 +38,10 @@ for (r_idx = 0; r_idx < n_rounds; r_idx++){
         decay: .99,
         n_travel_steps: this_travel_amount,
         press_success_prob_travel: .7,
-        press_success_prob_harvest: .7,
+        press_success_prob_harvest: .5,
         reward_noise: 2.5,
         start_reward_noise: 4,
-        time_min: 1.5,
+        time_min: .1,
         travel_key_seq:this_travel_key_seq,
         travel_prompt: this_travel_prompt,
         harvest_key_seq: harvest_key_seq,
@@ -51,12 +53,27 @@ for (r_idx = 0; r_idx < n_rounds; r_idx++){
   forage_trials = forage_trials.concat(jsPsych.randomization.shuffle(this_round_trials,1));
 }
 
-var make_text_trial = function(travel_prompt, harvest_prompt){
-  var text_trial = {
-    type: 'evan-display-text',
-    line_1: "Traveling to a new environment",
-    line_2: "Travel sequence: " + travel_prompt + ", Harvest sequence: " + harvest_prompt,
-    line_3: ""
+var make_text_trial = function(travel_prompt, harvest_prompt, trial_num){
+  if (trial_num == 1){
+    var text_trial = {
+      type: 'evan-display-text',
+      line_1: "Traveling to a new environment",
+      line_2: "Travel sequence: " + travel_prompt + ", Harvest sequence: " + harvest_prompt,
+      line_3: ""
+    }
+  } else{
+    var text_trial = {
+      type: 'evan-display-text',
+      line_1: function(){
+        var lasttimelinedata = jsPsych.data.getLastTimelineData();
+        var total_points = lasttimelinedata.values().pop().total_points
+        total_points_arr.push(total_points);
+        console.log(lasttimelinedata)
+        return "You collected " + total_points + " points. Great work. You've completed " + (trial_num -1)+ " out of 12 rounds."  ;
+      },
+      line_2: "Traveling to a new environment",
+      line_3: "Travel sequence: " + travel_prompt + ", Harvest sequence: " + harvest_prompt
+    }
   }
   return text_trial
 }
@@ -68,14 +85,41 @@ var trials = forage_trials;
 var timeline = [];
 timeline.push(full_screen);
 
-timeline = timeline.concat(intro_w_trials);
+//timeline = timeline.concat(intro_w_trials);
 
 for (i = 0; i < trials.length; i++){
   var next_trial = trials[i];
-  var text_trial = make_text_trial(next_trial.travel_prompt, next_trial.harvest_prompt)
+  var text_trial = make_text_trial(next_trial.travel_prompt, next_trial.harvest_prompt, i + 1)
   timeline.push(text_trial);
   timeline.push(next_trial);
 }
+
+// compute bonus for the main task...
+var end_screen = {
+ type: 'html-button-response',
+    timing_post_trial: 0,
+    choices: ['End Task'],
+    on_start: function(){
+      console.log('nothing')
+       },
+    is_html: true,
+    stimulus: function(){
+
+      var random_total_points = jsPsych.randomization.sampleWithoutReplacement(total_points_arr, 1);
+
+
+
+   var string = 'You have finished the task. Thank you for your contribution to science! \
+             on a randomly selected round, you recevieved ' + random_total_points ' points. Your bonus will be based on this number.'
+          <b> PLEASE CLICK END TASK TO SUBMIT THE TASK TO PROLIFIC </b>.';
+
+   return string;
+ },
+   on_finish: function(){
+       window.location = "https://app.prolific.co/submissions/complete?cc=V23QBQM3";
+   }
+}
+timeline.push(end_screen)
 
 
 // need a screen thanking them for the task and also figuring out the bonus... -- do this tonight
