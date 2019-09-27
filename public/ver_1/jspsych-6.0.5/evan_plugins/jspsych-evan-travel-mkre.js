@@ -58,6 +58,10 @@ jsPsych.plugins["travel-mkre"] = (function() {
       harvest_prompt:{
         type: jsPsych.plugins.parameterType.STRING,
         default: undefined
+      },
+      trial_num:{
+        type: jsPsych.plugins.parameterType.INT,
+        default: undefined
       }
   }}
 
@@ -202,7 +206,8 @@ jsPsych.plugins["travel-mkre"] = (function() {
             success: false,
             correct_key: false,
             round: round,
-            total_points: total_points
+            total_points: total_points,
+            trial_num: trial.trial_num
           };
 
           jsPsych.data.write(data);
@@ -246,7 +251,8 @@ jsPsych.plugins["travel-mkre"] = (function() {
                success: false,
                correct_key: true,
                round: round,
-               total_points: total_points
+               total_points: total_points,
+               trial_num: trial.trial_num
              };
 
              jsPsych.data.write(data);
@@ -283,7 +289,8 @@ jsPsych.plugins["travel-mkre"] = (function() {
                success: true,
                correct_key: true,
                round: round,
-               total_points: total_points
+               total_points: total_points,
+               trial_num: trial.trial_num
              };
 
              jsPsych.data.write(data);
@@ -420,7 +427,8 @@ jsPsych.plugins["travel-mkre"] = (function() {
                 person_pos: person_pos,
                 tree_pos: tree_pos,
                 round: round,
-                total_points: total_points
+                total_points: total_points,
+                trial_num: trial.trial_num
               };
               jsPsych.data.write(data);
               round = round + 1;
@@ -482,7 +490,8 @@ jsPsych.plugins["travel-mkre"] = (function() {
                         correct_key: true,
                         tree_pos: tree_pos,
                         round: round,
-                        total_points: total_points
+                        total_points: total_points,
+                        trial_num: trial.trial_num
                       };
                       jsPsych.data.write(data);
 
@@ -511,7 +520,8 @@ jsPsych.plugins["travel-mkre"] = (function() {
                   tree_pos: tree_pos,
                   correct_key: true,
                   round: round,
-                  total_points: total_points
+                  total_points: total_points,
+                  trial_num: trial.trial_num
                 };
                 jsPsych.data.write(data);
               }
@@ -547,7 +557,8 @@ jsPsych.plugins["travel-mkre"] = (function() {
                 success: false,
                 correct_key: false,
                 round: round,
-                total_points: total_points
+                total_points: total_points,
+                trial_num: trial.trial_num
               };
 
               jsPsych.data.write(data);

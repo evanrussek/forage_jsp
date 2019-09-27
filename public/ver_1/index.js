@@ -68,20 +68,13 @@ function task(uid){
   // create a reference to the database
   var db = firebase.firestore();
 
-  //console.log(uid)
-  db.collection('foragetask').doc('run1').collection('subjects').doc(uid).set({
-      last_subjectID: subjectID,  // this refers to the subject's ID from prolific
-      last_date: new Date().toLocaleDateString(),
-      last_time: new Date().toLocaleTimeString()
-  })
+  var run_name = 'run1';
 
-  db.collection('foragetask').doc('run1').collection('subjects').doc(uid).collection('rounds').doc(subjectID.toString()).set({
+  // record new date and start time
+  db.collection('foragetask').doc(run_name).collection('subjects').doc(subjectID.toString()).collection('taskdata').doc('start').set({
       subjectID: subjectID,  // this refers to the subject's ID from prolific/
       date: new Date().toLocaleDateString(),
-      start_time: new Date().toLocaleTimeString(),
-      end_time: null,
-      task_data: null,
-      bonus_data:null
+      start_time: new Date().toLocaleTimeString()
   })
 
 
@@ -99,11 +92,12 @@ function task(uid){
   var travel_prompt_easy = ["(D -> K -> D -> K)"];
   var travel_key_seq_hard =['z', '/', 't', 'y'];
   var travel_prompt_hard = ["(Z -> / -> T -> Y)"];
-  var n_rounds = 2;
+  var n_rounds = 1;
 
   var total_points_arr = [];
 
   var forage_trials = [];
+  var trial_num = 0;
   for (r_idx = 0; r_idx < n_rounds; r_idx++){
     var this_round_trials = [];
     for (d_idx = 0; d_idx < 2; d_idx++){
@@ -116,6 +110,7 @@ function task(uid){
           var this_travel_key_seq = travel_key_seq_hard;
           var this_travel_prompt = travel_prompt_hard;
         }
+        trial_num = trial_num + 1;
         var this_trial = {
           type: 'travel-mkre',
           start_reward: 100,
@@ -125,7 +120,7 @@ function task(uid){
           press_success_prob_harvest: .5,
           reward_noise: 2.5,
           start_reward_noise: 4,
-          time_min: 1.5,
+          time_min: .05,
           travel_key_seq:this_travel_key_seq,
           travel_prompt: this_travel_prompt,
           harvest_key_seq: harvest_key_seq,
@@ -136,6 +131,34 @@ function task(uid){
     }
     forage_trials = forage_trials.concat(jsPsych.randomization.shuffle(this_round_trials,1));
   }
+
+// add a trial num
+for (var i = 0;i < forage_trials.length;  i++){
+  forage_trials[i].trial_num = i + 1;
+}
+
+var task_name = 'foragetask';
+var run_name = 'run1';
+
+
+//db.collection("tasks").doc('meg_generalisation_8').collection('subjects').doc(uid).collection('trial_data').doc('trial_' + trial_data.trial_number.toString()).set({trial_data});
+
+// add a trial num
+save_to_fb = true;
+for (var i = 0;i < forage_trials.length;  i++){
+  var trial_number = i + 1;
+  forage_trials[i].on_finish = function(){
+    var this_trial_data = jsPsych.data.get().filter({trial_num: trial_number}).json()
+    if (save_to_fb){
+      db.collection('foragetask').doc(run_name).collection('subjects').doc(uid).collection('taskdata').doc('trial_' + trial_number.toString()).set({
+        trial_data: this_trial_data
+      })
+    }
+  };
+}
+
+
+
 
   var make_text_trial = function(travel_prompt, harvest_prompt, trial_num){
     if (trial_num == 1){
@@ -156,7 +179,10 @@ function task(uid){
           return "You collected " + total_points + " points. Great work. You've completed " + (trial_num -1)+ " out of 12 rounds."  ;
         },
         line_2: "Traveling to a new environment",
-        line_3: "Travel sequence: " + travel_prompt + ", Harvest sequence: " + harvest_prompt
+        line_3: "Travel sequence: " + travel_prompt + ", Harvest sequence: " + harvest_prompt,
+        //on_start: function (){
+        //  last_trial_data.json()
+        //}
       }
     }
     return text_trial
@@ -169,7 +195,7 @@ function task(uid){
   var timeline = [];
   timeline.push(full_screen);
 
-  timeline = timeline.concat(intro_w_trials);
+  //timeline = timeline.concat(intro_w_trials);
 
   for (i = 0; i < trials.length; i++){
     var next_trial = trials[i];
@@ -186,7 +212,7 @@ function task(uid){
       on_start: function(){
             // save the task data...
             var task_data = jsPsych.data.get().json();
-            db.collection('foragetask').doc('run1').collection('subjects').doc(uid).collection('rounds').doc(subjectID.toString()).update({
+            db.collection('foragetask').doc('run1').collection('subjects').doc(uid).collection('rounds').doc(uid).update({
                 task_data: task_data})
             },
       is_html: true,
