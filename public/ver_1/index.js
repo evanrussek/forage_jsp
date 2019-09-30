@@ -71,7 +71,12 @@ function task(uid){
   var run_name = 'run1';
 
   // record new date and start time
-  db.collection('foragetask').doc(run_name).collection('subjects').doc(subjectID.toString()).collection('taskdata').doc('start').set({
+  db.collection('foragetask').doc(run_name).collection('subjects').doc(uid).set({
+      subjectID: subjectID
+  })
+
+  // record new date and start time
+  db.collection('foragetask').doc(run_name).collection('subjects').doc(uid).collection('taskdata').doc('start').set({
       subjectID: subjectID,  // this refers to the subject's ID from prolific/
       date: new Date().toLocaleDateString(),
       start_time: new Date().toLocaleTimeString()
@@ -92,7 +97,7 @@ function task(uid){
   var travel_prompt_easy = ["(D -> K -> D -> K)"];
   var travel_key_seq_hard =['z', '/', 't', 'y'];
   var travel_prompt_hard = ["(Z -> / -> T -> Y)"];
-  var n_rounds = 1;
+  var n_rounds = 2;
 
   var total_points_arr = [];
 
@@ -120,7 +125,7 @@ function task(uid){
           press_success_prob_harvest: .5,
           reward_noise: 2.5,
           start_reward_noise: 4,
-          time_min: .05,
+          time_min: 1.5,
           travel_key_seq:this_travel_key_seq,
           travel_prompt: this_travel_prompt,
           harvest_key_seq: harvest_key_seq,
@@ -148,9 +153,13 @@ save_to_fb = true;
 for (var i = 0;i < forage_trials.length;  i++){
   var trial_number = i + 1;
   forage_trials[i].on_finish = function(){
-    var this_trial_data = jsPsych.data.get().filter({trial_num: trial_number}).json()
+    //console.log(this.trial_num)
+    var this_trial_data = jsPsych.data.get().filter({trial_num: this.trial_num}).json()
+    //console.log(this_trial_data)
     if (save_to_fb){
-      db.collection('foragetask').doc(run_name).collection('subjects').doc(uid).collection('taskdata').doc('trial_' + trial_number.toString()).set({
+      //console.log(this_trial_data)
+      console.log('saving this trial')
+      db.collection('foragetask').doc(run_name).collection('subjects').doc(uid).collection('taskdata').doc('trial_' + this.trial_num.toString()).set({
         trial_data: this_trial_data
       })
     }
@@ -195,7 +204,7 @@ for (var i = 0;i < forage_trials.length;  i++){
   var timeline = [];
   timeline.push(full_screen);
 
-  //timeline = timeline.concat(intro_w_trials);
+  timeline = timeline.concat(intro_w_trials);
 
   for (i = 0; i < trials.length; i++){
     var next_trial = trials[i];
@@ -209,12 +218,6 @@ for (var i = 0;i < forage_trials.length;  i++){
    type: 'html-button-response',
       timing_post_trial: 0,
       choices: ['End Task'],
-      on_start: function(){
-            // save the task data...
-            var task_data = jsPsych.data.get().json();
-            db.collection('foragetask').doc('run1').collection('subjects').doc(uid).collection('rounds').doc(uid).update({
-                task_data: task_data})
-            },
       is_html: true,
       stimulus: function(){
 
@@ -224,12 +227,10 @@ for (var i = 0;i < forage_trials.length;  i++){
                  On a randomly selected round, you recevieved ' + random_total_points + ' points. Your bonus will be based on this number. \
               <b> PLEASE CLICK END TASK TO SUBMIT THE TASK TO PROLIFIC </b>.';
 
-        var bonus_data = {
-              'random_total_points': random_total_points,
-        };
-        db.collection('foragetask').doc('run1').collection('subjects').doc(uid).collection('rounds').doc(subjectID.toString()).update({
-            bonus_data: bonus_data,
-            end_time: new Date().toLocaleTimeString()})
+        db.collection('foragetask').doc(run_name).collection('subjects').doc(uid).collection('taskdata').doc('end').set({
+          bonus_points: random_total_points,
+          end_time:  new Date().toLocaleTimeString()
+        })
      return string;
     },
      on_finish: function(){
@@ -243,14 +244,17 @@ for (var i = 0;i < forage_trials.length;  i++){
   // need a screen thanking them for the task and also figuring out the bonus... -- do this tonight
   var instruc_images = instruction_pagelinks_a.concat(instruction_pagelinks_b);
 
+console.log(timeline)
+
   /* start the experiment */
   jsPsych.init({
     timeline: timeline,
     preload_image: instruc_images,
     show_preload_progress_bar: true,
     on_finish: function() {
-      //console.log('done')
-      jsPsych.data.get().localSave('csv','test_res.csv');
+      console.log('done')
+      // download many files...?
+      //jsPsych.data.get().localSave('csv','test_res.csv');
     //on_finish: saveData
     }
   });
