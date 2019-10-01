@@ -1,6 +1,9 @@
 ---
 title: "R Notebook"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
 ---
 
 
@@ -13,8 +16,13 @@ library(zoo)
 library(ggplot2)
 library(ggpubr)
 library(RcppRoll)
+library(knitr)
 
+```
+
+```{r}
 source("plot_funcs.R")
+
 ```
 
 
@@ -22,48 +30,220 @@ source("plot_funcs.R")
 data <- read.csv('data\\run1_data.csv')
 head(data)
 data <- data %>% ungroup() %>% bind_cols(s_num = group_indices(., subjectID))
+data <- data %>% mutate(subj = factor(s_num))
+```
 
-
+```{r, results = "hide"}
+# clean all the data and bind
+datalist <- list()
+for (i in 1:10){
+  subj_data <- data %>% filter(s_num == i)
+  subj_data <- clean_subj_data(subj_data)
+  subj_data <- ungroup(subj_data)
+  datalist[[i]] <- subj_data
+}
+#cdata <- do.call(rbind,datalist)
+cdata <- bind_rows(datalist)
 ```
 
 ```{r}
+source("plot_funcs.R")
 
+# plot reward vs press number for each subject
 for (s in 1:10){
-  subj_data <- data %>% filter(s_num == s)
-  subj_data <- clean_subj_data(subj_data)
-  plot_subj_basic(subj_data)  
+  subj_data <- cdata %>% filter(s_num == s)
+  plot_subj_reward_v_press(subj_data)  
 }
 
+```
+
+Fully good subjects - 1, 3, 4, 9 (ex. 1 round), 10
+Problem subjs: 2 (quit after 5 rounds), 5 (never did hard trials) , 6 (never did hard trials) , 7 (never travelled again) 8 (quit on 3 trials)
 
 
+```{r}
+
+# compute exit threshold for each round for each subject / trial
+
+get_trial_exits <- function(thdata){
+    # get harvest
+  last_phase <- last(thdata$phase)
+  
+  # go through data.. if last phase was harvest, remove that round... 
+  if (last_phase == "HARVEST"){
+    last_round <- last(thdata$round)
+    # get the last reward ops...
+    last_reward_ob <- last(thdata$reward_obs[!is.na(thdata$reward_obs)])
+    
+    #if (last_reward_ob > 8){
+    thdata <- thdata %>% filter(round != last_round)
+    #}
+  }
+  
+  # now select harvest data
+  thdata <- thdata %>% filter(phase == "HARVEST", !is.na(reward_obs)) # find out why reward_true has so many .na
+  
+  ## get either last true reward observed
+  return_tbl <- thdata %>% 
+                  group_by(round) %>% 
+                      summarise(s_num = first(s_num), last_reward = last(reward_obs),
+                          trial_num = first(trial_num),
+                          n_travel_steps = first(n_travel_steps),
+                          travel_key_cond = first(travel_key_cond),
+                          rep_number = first(rep_number)) %>% ungroup()
+  return(return_tbl)
+}
+
+#sdata %>% group_by(trial_num) %>%
+#  do(get_trial_exits(.))
+
+exit_data <- cdata %>% group_by(s_num, trial_num) %>%
+  do(get_trial_exits(.)) %>% ungroup()
+
+```
+
+
+
+
+```{r}
+library(Hmisc)
+
+for (s in 1:10){
+  p <- ggplot(data = exit_data %>% filter(s_num == s), 
+       mapping = aes(x = travel_key_cond, y = last_reward)) +
+  geom_dotplot(binaxis='y', stackdir = 'center', stackratio = 1.5, dotsize = 1.5) + 
+  facet_grid(n_travel_steps ~ rep_number) + theme_minimal()
+
+  pn <- p + stat_summary(fun.data=mean_sdl, fun.args = list(mult=1), 
+                 geom="pointrange", color="red") + ggtitle(paste('subj: ', s))
+  plot(pn)
+  
+}
+```
+```{r}
+# do some aggregating over exit thresholds... 
+# just get the mean for each subject for each timepoint, collapse accross rep number...
+mn_exit <- exit_data %>% group_by(s_num, rep_number, n_travel_steps, travel_key_cond) %>%
+  summarise(rep_exit_thresh = mean(last_reward)) %>% 
+  group_by(s_num, n_travel_steps, travel_key_cond) %>%
+  summarise(exit_thresh = mean(rep_exit_thresh)) %>%
+  mutate(subj = as.factor(s_num)) %>% ungroup()
+
+# now just plot this for each subject -- draw lines to show easy - hard effect
+ggplot(mn_exit, aes(x = travel_key_cond, y = exit_thresh)) + geom_dotplot(binaxis = 'y', aes(fill = subj), dotsize = 1.2) + geom_line(aes(group = subj, color = subj), size = 1.2) +
+  facet_grid(.~n_travel_steps) + theme_minimal() + labs(y = 'Mean Last Reward Collected', x = 'Travel Sequence', subtitle = '# Travel Presses') #theme(legend.position = "none")
+
+ggplot(mn_exit, aes(x = factor(n_travel_steps), y = exit_thresh)) +
+  geom_dotplot(binaxis = 'y', aes(fill = subj), dotsize = 1.2) + 
+  geom_line(aes(group = subj, color = subj), size = 1.2) +
+  facet_grid(.~travel_key_cond) + 
+  theme_minimal() + 
+  labs(y = 'Mean Last Reward Collected', x = 'Travel Key Condition', subtitle = '# Travel Presses') 
+  #theme(legend.position = "none")
 
 ```
 
 ```{r}
 
-r1_den <- ggplot(subj_data %>% filter(rep_number == 1), aes(x = lag)) + geom_density(aes(fill = phase), alpha = 0.5) + facet_grid(n_travel_steps ~ travel_key_cond) + xlim(0,500)
+### lets deal with the RTs... (but how)
 
-r2_den <- ggplot(subj_data %>% filter(rep_number == 2), aes(x = lag)) + geom_density(aes(fill = phase), alpha = 0.5) + facet_grid(n_travel_steps ~ travel_key_cond) + xlim(0,500)
-#ggdensity(subj_data %>% filter(trial_num == 1), x = "lag", fill = "phase", add = #"median", color = "phase")
+# just for a given subject histogram all reaction times...
 
-ggarrange(r1_den, r2_den, common.legend = TRUE)
+ggplot(cdata, aes(x=lag)) + geom_histogram(binwidth = 10) + xlim(0,500) + facet_wrap( ~ s_num)
 
-# look at just harvest times...
-ggplot(subj_data %>% filter(phase == "HARVEST", rep_number == 1), aes(x = lag)) + geom_density(aes(fill = travel_key_cond), alpha = 0.5) + facet_grid(n_travel_steps ~ .) + xlim(0,500) + ggtitle("harvest period rts by condition")
+lag_data <- cdata %>% select(s_num, rep_number, travel_key_cond, n_travel_steps, phase, trial_num, lag, correct_key) %>% filter(lag < quantile(lag, .99), lag > quantile(lag, .01)) %>% print()
 
-# look at just harvest times...
-ggplot(subj_data %>% filter(phase == "TRAVEL", rep_number == 1), aes(x = lag)) + geom_density(aes(fill = travel_key_cond), alpha = 0.5) + facet_grid(n_travel_steps ~ .) + xlim(0,500) + ggtitle("travel period rts by condition")
+## filter out for each subject the top 95% of cases also the bottom 5%?
+#quantile(lag_data$lag, .98)
+
+lag_data %>% group_by(s_num) %>% summarise(top_lag = quantile(lag, .85), bottom_lag = quantile(lag,.2))
+
+filt_lag <- lag_data %>% group_by(s_num) %>% filter(lag < quantile(lag, .90), lag > quantile(lag, .1)) %>% ungroup()
 
 
-# effect of harvests on RTs?
-rt_ts_r1 <- ggplot(subj_data %>% filter(rep_number == 1), aes(x=lag)) + geom_density(aes(fill = factor(n_travel_steps)), alpha = .8) + facet_grid(phase ~ travel_key_cond) + xlim(0,300) + geom_vline(aes(xintercept = 1))
-rt_ts_r2 <- ggplot(subj_data %>% filter(rep_number == 2), aes(x=lag)) + geom_density(aes(fill = factor(n_travel_steps)), alpha = .8) + facet_grid(phase ~ travel_key_cond) + xlim(0,300) + geom_vline(aes(xintercept = 1))
+ggplot(filt_lag, aes(x=lag)) + geom_histogram(binwidth = 10) + xlim(0,500) + facet_wrap( ~ s_num)
 
-ggarrange(rt_ts_r1, rt_ts_r2, common.legend = TRUE)
- 
+
+
+ggplot(lag_data %>% filter(phase == "HARVEST"), aes(x=log(lag))) + geom_histogram(binwidth = .1) + xlim(0,10) + facet_wrap( ~ s_num)
+
+## now for each condition, take the mean...
+
 ```
 ```{r}
 
-subj_data %>% filter(travel_key_cond == "HARD", rep_number == 1)
+trial_filt_lag <- filt_lag %>% group_by(s_num, trial_num, phase) %>% # should you also group by round                       
+                          summarise(mean_filt_lag = mean(lag),
+                          n_travel_steps = first(n_travel_steps),
+                          travel_key_cond = first(travel_key_cond),
+                          rep_number = first(rep_number)) %>% ungroup() %>% print()
+
+trial_all_lag <- lag_data %>% group_by(s_num, trial_num, phase) %>% # should you also group by round                       
+                          summarise(med_lag = median(lag), mean_log_lag = mean(log(lag)),
+                          n_travel_steps = first(n_travel_steps),
+                          travel_key_cond = first(travel_key_cond),
+                          rep_number = first(rep_number)) %>% ungroup() %>% print()
+
+### try to filter at the trial level
+trial_filt_lag2 <- lag_data %>% group_by(s_num, trial_num, phase) %>% # should you also group by round  
+                          filter(lag < quantile(lag, .90), lag > quantile(lag, .1)) %>%
+                          summarise(mean_filt_lag2 = mean(lag),
+                          n_travel_steps = first(n_travel_steps),
+                          travel_key_cond = first(travel_key_cond),
+                          rep_number = first(rep_number)) %>% ungroup() %>% print()
+
+trial_lag <- full_join(trial_filt_lag, trial_all_lag)
+trial_lag <- full_join(trial_lag, trial_filt_lag2)
+trial_lag <- trial_lag %>% mutate(subj = factor(s_num))
+
+
+cond_lag <- trial_lag %>% group_by(n_travel_steps, travel_key_cond, subj, phase) %>% 
+  summarise(med_lag = mean(med_lag), mean_log_lag = mean(mean_log_lag), mean_filt_lag = mean(mean_filt_lag), mean_filt_lag2 = mean(mean_filt_lag2))
+  
+
+```
+
+```{r}
+
+ggplot(cond_lag, aes(x = factor(n_travel_steps), y = mean_filt_lag, fill = subj)) +
+  geom_point(aes(color = subj), size = 2) + geom_line(aes(group = subj, color = subj), size = 1.2) +
+  facet_grid(phase ~ travel_key_cond) + theme_minimal()
+
+ggplot(cond_lag, aes(x = factor(n_travel_steps), y = mean_filt_lag2, fill = subj)) +
+  geom_point(aes(color = subj), size = 2) + geom_line(aes(group = subj, color = subj), size = 1.2) +
+  facet_grid(phase ~ travel_key_cond)  + theme_minimal()
+
+ggplot(cond_lag, aes(x = factor(n_travel_steps), y = med_lag, fill = subj)) +
+  geom_point(aes(color = subj), size = 2) + geom_line(aes(group = subj, color = subj), size = 1.2) +
+  facet_grid(phase ~ travel_key_cond)  + theme_minimal()
+
+ggplot(cond_lag, aes(x = factor(n_travel_steps), y = mean_log_lag, fill = subj)) +
+  geom_point(aes(color = subj), size = 2) + geom_line(aes(group = subj, color = subj), size = 1.2) +
+  facet_grid(phase ~ travel_key_cond)  + theme_minimal()
+
+```
+```{r}
+ggplot(cond_lag, aes(x = travel_key_cond, y = mean_filt_lag, fill = subj)) +
+  geom_point(aes(color = subj), size = 2) + geom_line(aes(group = subj, color = subj), size = 1.2) +
+  facet_grid(phase ~ n_travel_steps)
+
+ggplot(cond_lag, aes(x = travel_key_cond, y = mean_filt_lag2, fill = subj)) +
+  geom_point(aes(color = subj), size = 2) + geom_line(aes(group = subj, color = subj), size = 1.2) +
+  facet_grid(phase ~ n_travel_steps)
+
+ggplot(cond_lag, aes(x = travel_key_cond, y = med_lag, fill = subj)) +
+  geom_point(aes(color = subj), size = 2) + geom_line(aes(group = subj, color = subj), size = 1.2) +
+  facet_grid(phase ~ n_travel_steps)
+
+ggplot(cond_lag, aes(x = travel_key_cond, y = mean_log_lag, fill = subj)) +
+  geom_point(aes(color = subj), size = 2) + geom_line(aes(group = subj, color = subj), size = 1.2) +
+  facet_grid(phase ~ n_travel_steps)
+
+```
+```{r}
+# the crazy fast RTs come when it's an incorrect key followed by a correct key... so should be able to fix this...
+
+lag_data %>% filter(s_num == 1) %>% select(correct_key, lag)
+#
 ```
 
