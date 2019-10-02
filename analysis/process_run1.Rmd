@@ -151,7 +151,8 @@ ggplot(mn_exit, aes(x = factor(n_travel_steps), y = exit_thresh)) +
 
 ggplot(cdata, aes(x=lag)) + geom_histogram(binwidth = 10) + xlim(0,500) + facet_wrap( ~ s_num)
 
-lag_data <- cdata %>% select(s_num, rep_number, travel_key_cond, n_travel_steps, phase, trial_num, lag, correct_key) %>% filter(lag < quantile(lag, .99), lag > quantile(lag, .01)) %>% print()
+lag_data <- cdata %>% select(s_num, rep_number, travel_key_cond, n_travel_steps, phase, trial_num, lag, correct_key, round) 
+#%>% filter(lag < quantile(lag, .99), lag > quantile(lag, .01)) %>% print()
 
 ## filter out for each subject the top 95% of cases also the bottom 5%?
 #quantile(lag_data$lag, .98)
@@ -225,25 +226,61 @@ ggplot(cond_lag, aes(x = factor(n_travel_steps), y = mean_log_lag, fill = subj))
 ```{r}
 ggplot(cond_lag, aes(x = travel_key_cond, y = mean_filt_lag, fill = subj)) +
   geom_point(aes(color = subj), size = 2) + geom_line(aes(group = subj, color = subj), size = 1.2) +
-  facet_grid(phase ~ n_travel_steps)
+  facet_grid(phase ~ n_travel_steps)+ theme_minimal()
 
 ggplot(cond_lag, aes(x = travel_key_cond, y = mean_filt_lag2, fill = subj)) +
   geom_point(aes(color = subj), size = 2) + geom_line(aes(group = subj, color = subj), size = 1.2) +
-  facet_grid(phase ~ n_travel_steps)
+  facet_grid(phase ~ n_travel_steps)+ theme_minimal()
 
 ggplot(cond_lag, aes(x = travel_key_cond, y = med_lag, fill = subj)) +
   geom_point(aes(color = subj), size = 2) + geom_line(aes(group = subj, color = subj), size = 1.2) +
-  facet_grid(phase ~ n_travel_steps)
+  facet_grid(phase ~ n_travel_steps)+ theme_minimal()
 
 ggplot(cond_lag, aes(x = travel_key_cond, y = mean_log_lag, fill = subj)) +
   geom_point(aes(color = subj), size = 2) + geom_line(aes(group = subj, color = subj), size = 1.2) +
-  facet_grid(phase ~ n_travel_steps)
+  facet_grid(phase ~ n_travel_steps)+ theme_minimal()
 
 ```
 ```{r}
 # the crazy fast RTs come when it's an incorrect key followed by a correct key... so should be able to fix this...
 
 lag_data %>% filter(s_num == 1) %>% select(correct_key, lag)
-#
+
+
+# for each phase, sum every 4 RTs
+
+harvest_round <- lag_data %>% filter(s_num == 1, trial_num == 1, round == 1, phase == "HARVEST")
+
+harvest_round <- harvest_round %>% mutate(correct_key_int = as.integer(as.logical(correct_key)),
+                                correct_key_sum = cumsum(correct_key_int),
+                                n_correct_seq = 1 + ((correct_key_sum - 1) %% 4)) %>% print()
+# take the cumulative sum
+####
+seq_num_col = vector("int", length = )
+
+
+
+```
+
+
+```{r}
+#harvest_round$n_correct_seq[is.na(harvest_round$n_correct_seq)] = 0
+n_presses <- length(harvest_round$n_correct_seq)
+seq_group <- integer(n_presses)
+group_num = 0;
+for (i in 1:n_presses){
+  if is.na()
+  if (harvest_round$n_correct_seq[i] == 1){
+    group_num <- group_num + 1
+  }
+  seq_group[i] <- group_num 
+}
+```
+
+
+```{r}
+seq_group
+
+
 ```
 
