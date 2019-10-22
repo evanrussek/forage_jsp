@@ -244,7 +244,7 @@ ggplot(cond_lag, aes(x = travel_key_cond, y = mean_log_lag, fill = subj)) +
 ```{r}
 # the crazy fast RTs come when it's an incorrect key followed by a correct key... so should be able to fix this...
 
-lag_data %>% filter(s_num == 1) %>% select(correct_key, lag)
+# also want to recode the last harvest press as the first travel press? or just chop off the first travel seq...
 
 
 # for each phase, sum every 4 RTs
@@ -253,10 +253,44 @@ harvest_round <- lag_data %>% filter(s_num == 1, trial_num == 1, round == 1, pha
 
 harvest_round <- harvest_round %>% mutate(correct_key_int = as.integer(as.logical(correct_key)),
                                 correct_key_sum = cumsum(correct_key_int),
-                                n_correct_seq = 1 + ((correct_key_sum - 1) %% 4)) %>% print()
-# take the cumulative sum
-####
-seq_num_col = vector("int", length = )
+                                n_correct_seq = 1 + ((correct_key_sum - 1) %% 4),
+                                n_correct_seq2 = replace(n_correct_seq, (n_correct_seq == 4) & (lag(n_correct_seq) == 4), 1)) %>% print()
+
+
+#harvest_round$n_correct_seq[is.na(harvest_round$n_correct_seq)] = 0
+add_seq_group <- function(harvest_round){
+  
+  harvest_round <- harvest_round %>% mutate(correct_key_int = as.integer(as.logical(correct_key)),
+                                correct_key_sum = cumsum(correct_key_int),
+                                n_correct_seq = 1 + ((correct_key_sum - 1) %% 4),
+                                n_correct_seq = replace(n_correct_seq, 
+                                                        (n_correct_seq == 4) & (lag(n_correct_seq) == 4),
+                                                        1))
+  
+  n_presses <- length(harvest_round$n_correct_seq)
+  seq_group <- integer(n_presses)
+  group_num = 0;
+  for (i in 1:n_presses){
+    if (is.na(harvest_round$n_correct_seq[i])){
+      seq_group[i] <- 0
+    }else{
+        if (harvest_round$n_correct_seq[i] == 1){
+          group_num <- group_num + 1
+        }
+      seq_group[i] <- group_num 
+    }
+  }
+  new_harvest_round <- harvest_round %>% mutate(seq_num = seq_group)
+  
+  return(new_harvest_round)
+}
+
+
+lag_data2 <- lag_data %>% group_by(s_num, trial_num, round, phase) %>%
+  do(add_seq_group(.)) %>% ungroup()
+
+
+lag_data2
 
 
 
@@ -265,21 +299,29 @@ seq_num_col = vector("int", length = )
 
 ```{r}
 #harvest_round$n_correct_seq[is.na(harvest_round$n_correct_seq)] = 0
-n_presses <- length(harvest_round$n_correct_seq)
-seq_group <- integer(n_presses)
-group_num = 0;
-for (i in 1:n_presses){
-  if is.na()
-  if (harvest_round$n_correct_seq[i] == 1){
-    group_num <- group_num + 1
+add_seq_group <- function(harvest_round){
+  
+  n_presses <- length(harvest_round$n_correct_seq)
+  seq_group <- integer(n_presses)
+  group_num = 1;
+  for (i in 1:n_presses){
+    if (is.na(harvest_round$n_correct_seq[i])){
+      seq_group[i] <- 0
+    }else{
+        if (harvest_round$n_correct_seq[i] == 4){
+          group_num <- group_num + 1
+        }
+      seq_group[i] <- group_num 
+    }
   }
-  seq_group[i] <- group_num 
+  
+  harvest_round %>% mutate(seq_num = seq_group)
 }
 ```
 
 
 ```{r}
-seq_group
+seq_group # get rid of the zero...
 
 
 ```
