@@ -5,6 +5,7 @@ var instruction_pagelinks_a = ['Stimuli/forage_instructions/Slide1.JPG',
                             'Stimuli/forage_instructions/Slide4.JPG',
                             'Stimuli/forage_instructions/Slide5.JPG',
                             'Stimuli/forage_instructions/Slide6.JPG'];
+                            
 var instruction_pagelinks_b = ['Stimuli/forage_instructions/Slide7.JPG',
 															'Stimuli/forage_instructions/Slide8.JPG'];
 
@@ -12,16 +13,16 @@ var practice_trial = {
 	type: 'travel-mkre',
 	start_reward: 100,
 	decay: .98,
-	n_travel_steps: 6,
+	n_travel_steps: 12,
 	press_success_prob_travel: .7,
 	press_success_prob_harvest: .5,
 	reward_noise: 2.5,
 	start_reward_noise: 4,
 	time_min: .75,
-	travel_key_seq: ['z', '/', 't', 'y'],
-	travel_prompt: ["(Z -> / -> T -> Y)"],
-	harvest_key_seq: ['f', 'j', 'f', 'j'],
-	harvest_prompt: ["(F -> J -> F -> J)"]
+	travel_key_seq: ['a', 'a', 'a', 'a','a','a', 'l', 'f', 'h'],
+	travel_prompt:  ["A (x 6) -> L (x 1) -> F (x 1) -> H (x 1)"],
+	harvest_key_seq: ['j'],
+	harvest_prompt: ['j']
 };
 
 
@@ -50,8 +51,8 @@ var questions = ["How long will each round last?", // 1
 				"What happens to the number of points a tree provides over time?", // 6
 				"When you are at a tree, how do you leave the tree?"]; // 7
 
-var options1 =  ['30 seconds', '60 seconds', '90 seconds', '120 seconds', '180 seconds'];
-var correct1 = 2;
+var options1 =  ['30 seconds', '1 minute', '90 seconds', '2 minutes', '180 seconds'];
+var correct1 = 3;
 
 var options2 = ['Total number of points collected over the entire experiment',
 				'Total number of points collected on a randomly selected round',
@@ -59,18 +60,18 @@ var options2 = ['Total number of points collected over the entire experiment',
 var correct2 = 1;
 
 var options3 = ['Entering the TRAVEL sequence keys in order, repeatedly',
-				'Entering the HARVEST sequence keys in order, repeatedly',
+				'Entering the HARVEST key, repeatedly',
 				'Entering the TRAVEL sequence keys in order, once',
-				'Entering the HARVEST sequence keys in order, once'];
+				'Entering the HARVEST key, once'];
 var correct3 = 0;
 
 var options4 = ['yes', 'no'];
 var correct4 = 1;
 
 var options5 = ['Entering the TRAVEL sequence keys in order, repeatedly',
-				'Entering the HARVEST sequence keys in order, repeatedly',
+				'Entering the HARVEST sequence key, repeatedly',
 				'Entering the TRAVEL sequence keys once.',
-				'Entering the HARVEST sequence keys once.'];
+				'Entering the HARVEST sequence key once.'];
 var correct5 = 1;
 
 var options6 = ['The number of points decreases over time.',
@@ -80,7 +81,7 @@ var options6 = ['The number of points decreases over time.',
 var correct6 = 0;
 
 var options7 = ['Entering the TRAVEL sequence.',
-				'Entering the HARVEST sequence.'];
+				'Entering the HARVEST key.'];
 var correct7 = 0;
 
 // build the quiz...

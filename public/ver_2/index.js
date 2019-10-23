@@ -68,7 +68,7 @@ function task(uid){
   // create a reference to the database
   var db = firebase.firestore();
 
-  var run_name = 'run1';
+  var run_name = 'run2';
 
   // record new date and start time
   db.collection('foragetask').doc(run_name).collection('subjects').doc(uid).set({
@@ -89,15 +89,16 @@ function task(uid){
   };
 
   // we'll vary the travel amount?
-  var travel_amounts = [8, 16, 32];
-  var harvest_key_seq = ['f', 'j', 'f', 'j'];
-  var harvest_prompt = ["(F -> J -> F -> J)"];
+  var travel_amounts = [9, 18, 36];
+  var harvest_key_seq = ['j'];
+  var harvest_prompt = ['j'];
 
-  var travel_key_seq_easy = ['d', 'k', 'd', 'k'];
-  var travel_prompt_easy = ["(D -> K -> D -> K)"];
-  var travel_key_seq_hard =['z', '/', 't', 'y'];
-  var travel_prompt_hard = ["(Z -> / -> T -> Y)"];
-  var n_rounds = 2;
+  var travel_key_seq_hard = ['a', 'a','a', 'a', 'a', 'a', 'l', 'f', 'h'];
+  var travel_prompt_hard = ["A (x 6) -> L (x 1) -> F (x 1) -> H (x 1)"];
+  var travel_key_seq_easy =['h', 'h', 'h', 'h','h', 'h', 'a', 'l', 'f'];
+  var travel_prompt_easy = ["H (x 6) -> A (x 1) -> L (x 1) -> F (x 1)"];
+  var n_rounds = 1;
+
 
   var total_points_arr = [];
 
@@ -125,7 +126,7 @@ function task(uid){
           press_success_prob_harvest: .5,
           reward_noise: 2.5,
           start_reward_noise: 4,
-          time_min: 1.5,
+          time_min: 2,
           travel_key_seq:this_travel_key_seq,
           travel_prompt: this_travel_prompt,
           harvest_key_seq: harvest_key_seq,
@@ -137,13 +138,16 @@ function task(uid){
     forage_trials = forage_trials.concat(jsPsych.randomization.shuffle(this_round_trials,1));
   }
 
+
+
+
 // add a trial num
 for (var i = 0;i < forage_trials.length;  i++){
   forage_trials[i].trial_num = i + 1;
 }
 
 var task_name = 'foragetask';
-var run_name = 'run1';
+var run_name = 'run2';
 
 
 //db.collection("tasks").doc('meg_generalisation_8').collection('subjects').doc(uid).collection('trial_data').doc('trial_' + trial_data.trial_number.toString()).set({trial_data});
@@ -168,7 +172,6 @@ for (var i = 0;i < forage_trials.length;  i++){
 
 
 
-
   var make_text_trial = function(travel_prompt, harvest_prompt, trial_num){
     if (trial_num == 1){
       var text_trial = {
@@ -185,7 +188,7 @@ for (var i = 0;i < forage_trials.length;  i++){
           var total_points = lasttimelinedata.values().pop().total_points
           total_points_arr.push(total_points);
           console.log(lasttimelinedata)
-          return "You collected " + total_points + " points. Great work. You've completed " + (trial_num -1)+ " out of 12 rounds."  ;
+          return "You collected " + total_points + " points. Great work. You've completed " + (trial_num -1)+ " out of 6 rounds."  ;
         },
         line_2: "Traveling to a new environment",
         line_3: "Travel sequence: " + travel_prompt + ", Harvest sequence: " + harvest_prompt,
@@ -289,8 +292,8 @@ document.getElementById('consent').innerHTML = "        <p><b>Who is conducting 
     "\n" +
     "        <p><b>What will happen to me if I take part?</b><p>\n" +
     "        <p>\n" +
-    "            You will play one or more online computer games, which will last approximately 30 minutes. You will receive\n" +
-    "            at least £3.25 for helping us out with an opportunity for an additional bonus depending on your choices. The amount may vary with the decisions you make in the games.\n" +
+    "            You will play one or more online computer games, which will last approximately 20 minutes. You will receive\n" +
+    "            at least 2.5 GBP for helping us out with an opportunity for an additional bonus depending on your choices. The amount may vary with the decisions you make in the games.\n" +
     "            Remember, you are free to withdraw at any time without giving a reason.\n" +
     "        </p>\n" +
     "\n" +
@@ -316,7 +319,7 @@ document.getElementById('consent').innerHTML = "        <p><b>Who is conducting 
     "\n" +
     "        If you are concerned about how your personal data are being processed please contact the data controller\n" +
     "        who is <a href=\"mailto:protection@ucl.ac.uk\">UCL</a>.\n" +
-    "        If you remain unsatisfied, you may wish to contact the Information Commissioner’s Office (ICO).\n" +
+    "        If you remain unsatisfied, you may wish to contact the Information Commissioner Office (ICO).\n" +
     "        Contact details, and details of data subject rights, are available on the\n" +
     "        <a href=\"https://ico.org.uk/for-organisations/data-protection-reform/overview-of-the-gdpr/individuals-rights\">ICO website</a>.\n" +
     "        </p>\n" +
@@ -326,8 +329,8 @@ document.getElementById('consent').innerHTML = "        <p><b>Who is conducting 
     "            To help future research and make the best use of the research data you have given us (such as answers\n" +
     "        to questionnaires) we may keep your research data indefinitely and share these.  The data we collect will\n" +
     "        be shared and held as follows:<br>" +
-    "            •\tIn publications, your data will be anonymised, so you cannot be identified.<br>" +
-    "            •\tIn public databases, your data will be anonymised<br>" +
+    "            In publications, your data will be anonymised, so you cannot be identified.<br>" +
+    "            In public databases, your data will be anonymised<br>" +
     "\n" +
     "        If there are any queries or concerns please do not hesitate to contact <a href=\"mailto:e.russek@ucl.ac.uk\">Dr Evan Russek</a>.\n" +
     "        </p>\n" +

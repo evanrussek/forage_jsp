@@ -63,7 +63,7 @@ jsPsych.plugins["travel-mkre"] = (function() {
         type: jsPsych.plugins.parameterType.INT,
         default: undefined
       },
-      show_promp:{
+      show_prompt:{
         type: jsPsych.plugins.parameterType.INT,
         default: true
       }

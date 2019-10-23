@@ -96,7 +96,7 @@ var this_trial2 = {
   start_reward_noise: 4,
   time_min: 1,
   travel_key_seq: ['h', 'h', 'h', 'h','h', 'h', 'h', 'h', 'a', 'a', 'l', 'l', 'f', 'f'],
-  travel_prompt: ["k (x 8) -> a (x 2) -> l (x 2) -> f (x 2)"],
+  travel_prompt: ["h (x 8) -> a (x 2) -> l (x 2) -> f (x 2)"],
   harvest_key_seq: ['j'],
   harvest_prompt:  ['j'],
   show_prompt: true
@@ -104,8 +104,6 @@ var this_trial2 = {
 
 
 //db.collection("tasks").doc('meg_generalisation_8').collection('subjects').doc(uid).collection('trial_data').doc('trial_' + trial_data.trial_number.toString()).set({trial_data});
-
-
 
   var make_text_trial = function(travel_prompt, harvest_prompt, trial_num){
     if (trial_num == 1){
