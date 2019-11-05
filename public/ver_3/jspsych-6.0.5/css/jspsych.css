@@ -1,0 +1,343 @@
+/*
+ * CSS for jsPsych experiments.
+ *
+ * This stylesheet provides minimal styling to make jsPsych
+ * experiments look polished without any additional styles.
+ */
+
+ @import url(https://fonts.googleapis.com/css?family=Open+Sans:400italic,700italic,400,700);
+
+ .mainInstructions {
+     width: 100%;
+     margin: 20px auto;
+     /*margin-top: 100px;*/
+     text-align: center;
+     font-size: 18px;
+     color: #303030;
+ }
+
+ /* Customize the label (the container) */
+ .container {
+     display: block;
+     position: relative;
+     padding-left: 35px;
+     margin-bottom: 12px;
+     cursor: pointer;
+     -webkit-user-select: none;
+     -moz-user-select: none;
+     -ms-user-select: none;
+     user-select: none;
+     color: #303030;
+ }
+
+ /* Hide the browser's default checkbox */
+ /*.container input {
+     position: absolute;
+     opacity: 0;
+     cursor: pointer;
+ }
+
+ /* Create a custom checkbox */
+ /*.checkmark {
+     position: absolute;
+     top: 40%;
+     left: 90%;
+     height: 25px;
+     width: 25px;
+     background-color: #eee;
+ }
+
+ /* On mouse-over, add a grey background color */
+/* .container:hover input ~ .checkmark {
+     background-color: #ccc;
+ }
+
+ /* When the checkbox is checked, add a blue background */
+ /*.container input:checked ~ .checkmark {
+     background-color: #2196F3;
+ }
+
+ /* Create the checkmark/indicator (hidden when not checked) */
+ /*.checkmark:after {
+     content: "";
+     position: absolute;
+     display: none;
+ }
+
+ /* Show the checkmark when checked */
+ /*.container input:checked ~ .checkmark:after {
+     display: block;
+ }
+
+ /* Style the checkmark/indicator */
+ /*.container .checkmark:after {
+     left: 9px;
+     top: 5px;
+     width: 5px;
+     height: 10px;
+     border: solid white;
+     border-width: 0 3px 3px 0;
+     -webkit-transform: rotate(45deg);
+     -ms-transform: rotate(45deg);
+     transform: rotate(45deg);
+ } */
+
+ .form__header {
+     margin-bottom: 25px;
+     border-bottom: 1px dashed rgba(48, 48, 48, 0.15);
+     height: auto;
+ }
+
+ .form__title {
+     font-size: 35px;
+     margin: 2px 0;
+ }
+
+ .form__instruction {
+     font-size: 22px;
+ }
+
+ .preamble {
+     font-size: 18px;
+ }
+
+ .form__options {
+     border: none;
+     padding: 0 0 50px 0;
+ }
+
+ .form__question {
+     font-size: 25px;
+ }
+
+ .questionDemo {
+     margin: 60px 0 0 0;
+     font-size: 25px;
+     line-height: 15px
+ }
+
+ .form__answer {
+     display: block;
+     -webkit-box-sizing: border-box;
+     box-sizing: border-box;
+     width: 100%;
+     margin: 20px 0 20px 0;
+     height: 100px;
+     vertical-align: middle;
+     font-size: 22px;
+     text-align: center;
+     color: #0092ff;
+ }
+
+ .textEntry {
+     display: block;
+     -webkit-box-sizing: border-box;
+     box-sizing: border-box;
+     width: 100%;
+     margin: 20px 1% 20px 1%;
+     height: 100px;
+     vertical-align: middle;
+     font-size: 20px;
+     text-align: center;
+     color: #0092ff;
+ }
+
+
+ .submitContainer {
+     margin: 0 0 150px 0;
+ }
+
+ .submit_button {
+     display: block;
+     height: 60px;
+     width: 200px;
+     border: none;
+     background-color: #005da9;
+     color: #f5f5f5;
+     text-transform: uppercase;
+     font-family: 'Source Sans Pro', sans-serif;
+     padding: 0 20px;
+     border-radius: 20px;
+     font-weight: 900;
+     cursor: pointer;
+     margin: auto;
+     -webkit-transition: all .25s ease-in-out;
+     transition: all .25s ease-in-out;
+     font-size: 22px;
+     outline: none;
+ }
+ .submit_button:hover, .submit:focus {
+     background-color: #008aff;
+     text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.25);
+     outline: none;
+ }
+
+ .bold_text {
+     font-weight: bold;
+ }
+
+ .small_text {
+     font-size: 15px;
+ }
+
+
+ /* Input style */
+ /*input[type="radio"] {
+     opacity: 0;
+     width: 0;
+     height: 0;
+ }
+
+ input[type="radio"]:active ~ label {
+     opacity: 1;
+ }
+
+ input[type="radio"]:checked ~ label {
+     opacity: 1;
+     border: 1px solid #303030;
+ }
+
+
+ /* Customize the label (the container) */
+ /*.container {
+     display: block;
+     position: relative;
+     padding-left: 35px;
+     margin-bottom: 12px;
+     cursor: pointer;
+     -webkit-user-select: none;
+     -moz-user-select: none;
+     -ms-user-select: none;
+     user-select: none;
+     color: #303030;
+ } */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ .jspsych-display-element {
+   display: flex;
+   flex-direction: column;
+   overflow-y: auto;
+ }
+
+ .jspsych-display-element:focus {
+   outline: none;
+ }
+
+ .jspsych-content-wrapper {
+   display: flex;
+   margin: auto;
+   flex: 1 1 100%;
+   width: 100%;
+ }
+
+ .jspsych-content {
+   max-width: 95%; /* this is mainly an IE 10-11 fix */
+   text-align: center;
+   margin: auto; /* this is for overflowing content */
+ }
+
+ .jspsych-top {
+   align-items: flex-start;
+ }
+
+ .jspsych-middle {
+   align-items: center;
+ }
+
+/* fonts and type */
+
+.jspsych-display-element {
+  font-family: 'Open Sans', 'Arial', sans-serif;
+  font-size: 18px;
+  line-height: 1.6em;
+}
+
+/* Form elements like input fields and buttons */
+
+.jspsych-display-element input[type="text"] {
+  font-family: 'Open Sans', 'Arial', sans-serif;
+  font-size: 14px;
+}
+
+/* borrowing Bootstrap style for btn elements, but combining styles a bit */
+.jspsych-btn {
+  display: inline-block;
+  padding: 6px 12px;
+  margin: 0px;
+  font-size: 14px;
+  font-weight: 400;
+  font-family: 'Open Sans', 'Arial', sans-serif;
+  cursor: pointer;
+  line-height: 1.4;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  background-image: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: #333;
+  background-color: #fff;
+  border-color: #ccc;
+}
+
+.jspsych-btn:hover {
+  background-color: #ddd;
+  border-color: #aaa;
+}
+
+.jspsych-btn:disabled {
+  background-color: #eee;
+  color: #aaa;
+  border-color: #ccc;
+  cursor: not-allowed;
+}
+
+/* jsPsych progress bar */
+
+#jspsych-progressbar-container {
+  color: #555;
+  border-bottom: 1px solid #dedede;
+  background-color: #f9f9f9;
+  margin-bottom: 1em;
+  text-align: center;
+  padding: 8px 0px;
+  width: 100%;
+  line-height: 1em;
+}
+#jspsych-progressbar-container span {
+  font-size: 14px;
+  padding-right: 14px;
+}
+#jspsych-progressbar-outer {
+  background-color: #eee;
+  width: 50%;
+  margin: auto;
+  height: 14px;
+  display: inline-block;
+  vertical-align: middle;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+}
+#jspsych-progressbar-inner {
+  background-color: #aaa;
+  width: 0%;
+  height: 100%;
+}
+
+/* Control appearance of jsPsych.data.displayData() */
+#jspsych-data-display {
+  text-align: left;
+}

@@ -1,0 +1,58 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>My experiment</title>
+    <script src="jspsych-6.0.5/jspsych.js"></script>
+    <script src="jspsych-6.0.5/plugins/jspsych-html-button-response.js"></script>
+    <script src="jspsych-6.0.5/plugins/jspsych-fullscreen.js"></script>
+    <script src="jspsych-6.0.5/evan_plugins/jspsych-evan-travel-mkre.js"></script>
+    <script src="jspsych-6.0.5/evan_plugins/jspsych-evan-display-text.js"></script>
+    <script src="jspsych-6.0.5/evan_plugins/jspsych-evan-info-quiz.js"></script>
+    <script src="jspsych-6.0.5/evan_plugins/jspsych-evan-quiz.js"></script>
+    <script src="jspsych-6.0.5/plugins/jspsych-instructions.js"></script>
+    <link href="jspsych-6.0.5/css/jspsych.css" rel="stylesheet" type="text/css"></link>
+  <!--  <link rel='stylesheet' type='text/css' href='default_style.css'> -->
+    <!--<link rel='stylesheet' type='text/css' href='style.css'> -->
+  <!--   <link rel='stylesheet' type='text/css' href='style2.css'> --->
+    <script type="text/javascript" src="jspsych-6.0.5/d3.min.js"></script>
+  </head>
+  <body>
+    <div class="form" id="mainSection">
+            <header class="form__header" id="header"><h2 id="header_title" class="form__title"></h2></header>
+            <section class="mainInstructions" id="consent"></section>
+      </div>
+  </body>
+  <!-- The core Firebase JS SDK is always required and must be listed first -->
+  <script src="https://www.gstatic.com/firebasejs/6.6.2/firebase-app.js"></script>
+  <!-- TODO: Add SDKs for Firebase products that you want to use
+       https://firebase.google.com/docs/web/setup#config-web-app -->
+  <script src="https://www.gstatic.com/firebasejs/6.4.0/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/6.4.0/firebase-auth.js"></script>
+  <!-- TODO: Add SDKs for Firebase products that you want to use
+       https://firebase.google.com/docs/web/setup#available-libraries -->
+
+  <script>
+    // Your web app's Firebase configuration
+    var firebaseConfig = {
+      apiKey: "AIzaSyB5B9kaxXWslq1s9aUN52Hb-GTnf-SMcX0",
+      authDomain: "foragetask.firebaseapp.com",
+      databaseURL: "https://foragetask.firebaseio.com",
+      projectId: "foragetask",
+      storageBucket: "foragetask.appspot.com",
+      messagingSenderId: "665560463240",
+      appId: "1:665560463240:web:bd10ec549d656b0d9a6c3d",
+      measurementId: "G-YV9J62BYNB"
+    };
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    //firebase.analytics();
+  </script>
+  <!-- add script for firebaseConfig -->
+
+  <script type="text/javascript" src="parameters.js"></script>
+  <script type="text/javascript" src="define_instructions.js"></script>
+  <script type="text/javascript" src="index_scratch.js"> </script>
+  <script src="https://browser.sentry-cdn.com/4.4.1/bundle.min.js" crossorigin="anonymous"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+</html>
