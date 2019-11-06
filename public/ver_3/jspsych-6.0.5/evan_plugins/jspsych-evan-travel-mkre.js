@@ -95,15 +95,6 @@ jsPsych.plugins["travel-mkre"] = (function() {
     var all_keys = harvest_key_seq.concat(travel_key_seq);
 
 
-    keyPressed = {};
-    document.addEventListener('keydown', function(e) {
-        keyPressed[e.keyCode] = true;
-    }, false);
-
-    document.addEventListener('keyup', function(e) {
-      keyPressed[e.keyCode] = false;
-    }, false);
-
 
     // let's just try to print which keys are down...
     travel_held_down_keys = trial.travel_held_down_keys;
@@ -111,6 +102,37 @@ jsPsych.plugins["travel-mkre"] = (function() {
     for (var i = 0; i<travel_held_down_keys.length; i++){
       travel_held_down_key_codes.push(jsPsych.pluginAPI.convertKeyCharacterToKeyCode(travel_held_down_keys[i]))
     }
+
+
+    var map = {};
+    for (var i = 0; i < trial.travel_held_down_keys; i++){
+      map[jsPsych.pluginAPI.convertKeyCharacterToKeyCode] = false
+    }
+
+    $(document).keydown(function(e) {
+        if (e.keyCode in map) {
+            map[e.keyCode] = true;
+            if (map[68] && map[69] && map[86]) {
+                // FIRE EVENT
+            }
+        }
+    }).keyup(function(e) {
+        if (e.keyCode in map) {
+            map[e.keyCode] = false;
+        }
+    });
+
+        keyPressed = {};
+        document.addEventListener('keydown', function(e) {
+            keyPressed[e.keyCode] = true;    }, false);
+
+        document.addEventListener('keyup', function(e) {
+          //keyPressed[e.keyCode] = false;
+          delete keyPressed[e.keyCode]
+        }, false);
+
+
+
 
     var travel_keys_down = function(){
       var n_down = 0;
@@ -200,6 +222,46 @@ jsPsych.plugins["travel-mkre"] = (function() {
               person_w, person_h, 1);
 
     place_text("" , "prompt", par.w/2, prompt_txt_y, par.h/40, 1, "White")
+
+
+      var get_key_down_list = function(){
+        var key_down_list = [];
+          Object.keys(keyPressed).forEach(function(key) {
+            if (keyPressed[key] == true){
+              key_down_list.push(jsPsych.pluginAPI.convertKeyCodeToKeyCharacter(key))
+            }
+          });
+          console.log(key_down_list)
+          return key_down_list;
+      }
+
+
+
+        var draw_keys_down = function(){
+          var key_down_list = get_key_down_list();
+          console.log(key_down_list)
+          d3.selectAll(".keys_down").remove();
+          // want the center to be at w/2 - w/2 - travel_key_seq.length/2*w/4
+          var el_space = par.w/30;
+          var key_ctr = par.w/3;
+          var y_ctr = 4.5*par.h/6;
+          for (tk = 0; tk < key_down_list.length; tk++){
+
+          d3.select("svg").append("text")
+                    .attr("class", "keys_down")
+                    .attr("x",  key_ctr - (key_down_list.length/2)*el_space + el_space*tk + el_space/2)
+                    .attr("y",y_ctr)
+                    .attr("font-family","sans-serif")
+                    .attr("font-weight","normal")
+                    .attr("font-size",person_h)
+                    .attr("text-anchor","middle")
+                    .attr("fill", "white")
+                    .style("opacity",1)
+                    .text(key_down_list[tk])
+          }
+        }
+
+      //  document.addEventListener('keydown', draw_keys_down(), false);
 
     var draw_travel_keys = function(){
       d3.selectAll(".travel_keys").remove();
@@ -291,6 +353,13 @@ jsPsych.plugins["travel-mkre"] = (function() {
   }
 
 
+
+
+      window.setInterval(function(){
+      draw_keys_down();
+      }, 100);
+
+
     ////////////////////////////////////////
     // run the travel phase
     var travel_phase = function(){
@@ -307,6 +376,8 @@ jsPsych.plugins["travel-mkre"] = (function() {
 
 
       var handle_travel_response = function(info){
+      //  draw_keys_down()
+      //  draw_keys_down();
       //  console.log(keyPressed)
         console.log('travel_keys_down: ' + travel_keys_down())
 

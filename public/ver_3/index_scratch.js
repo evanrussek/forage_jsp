@@ -82,10 +82,11 @@ var this_trial = {
   travel_prompt: ["Press 'a' while holding down 'f', 'u' and 'p'  to travel"],
   harvest_key_seq: ['j'],
   harvest_prompt:  ["Press 'j' to harvest or 'a' to travel"],
-  travel_held_down_keys: ['f', 'u', 'p'],
+  travel_held_down_keys: ['f', 'd', 'u', 'i', 'o', 'p', 'n'],
   show_prompt: true
 }
 
+// add down a symbol if the keys are held down... -- repeated checks?
 
 var this_trial2 = { // this is the easy condition...
   type: 'travel-mkre',
@@ -154,7 +155,7 @@ var this_trial2 = { // this is the easy condition...
   }
 
   // shuffle these
-  var trials = [this_trial2];
+  var trials = [this_trial];
 
   /* create timeline */
   var timeline = [];
