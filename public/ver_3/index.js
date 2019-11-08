@@ -89,14 +89,20 @@ function task(uid){
   };
 
   // we'll vary the travel amount?
-  var travel_amounts = [9, 18, 36];
-  var harvest_key_seq = ['j'];
-  var harvest_prompt = ['j'];
+  var travel_amounts = [5, 10, 15];
+  var harvest_key_seq = ['u'];
+  var harvest_prompt = ['u'];
 
-  var travel_key_seq_hard = ['a', 'a','a', 'a', 'a', 'a', 'l', 'f', 'h'];
-  var travel_prompt_hard = ["A (x 6) -> L (x 1) -> F (x 1) -> H (x 1)"];
-  var travel_key_seq_easy =['h', 'h', 'h', 'h','h', 'h', 'a', 'l', 'f'];
-  var travel_prompt_easy = ["H (x 6) -> A (x 1) -> L (x 1) -> F (x 1)"];
+  var travel_key_seq_hard = ['a'];
+  var travel_hold_down_keys_hard = ['0', '9', 'm','t','e'];
+  var travel_prompt_hard = ["Repeatedly press 'a' (pinky) while holding down  't' , 'e' (left) and '0', '9', 'm' (right) to travel"];
+  var harvest_prompt_hard =  ["Repeatedly press 'u' to harvest or 'a' to travel"];
+
+  var travel_hold_down_keys_easy = ['0', '9', 'm','a'];
+  var travel_key_seq_easy =['f'];
+  var travel_prompt_easy = ["Repeatedly press 'f' (index) while holding down 'a' (left) and '0', '9', 'm' (right) to travel"];
+  var harvest_prompt_easy=  ["Repeatedly press 'u' to harvest or 'f' to travel"];
+
   var n_rounds = 1;
 
 
@@ -112,9 +118,14 @@ function task(uid){
         if (d_idx == 0){
             var this_travel_key_seq = travel_key_seq_easy;
             var this_travel_prompt = travel_prompt_easy;
+            var this_travel_held_down_keys = travel_hold_down_keys_easy;
+            var this_harvest_prompt = harvest_prompt_easy;
         }else{
           var this_travel_key_seq = travel_key_seq_hard;
           var this_travel_prompt = travel_prompt_hard;
+          var this_travel_held_down_keys = travel_hold_down_keys_hard;
+          var this_travel_prompt = travel_prompt_hard;
+          var this_harvest_prompt = harvest_prompt_hard;
         }
         trial_num = trial_num + 1;
         var this_trial = {
@@ -122,15 +133,16 @@ function task(uid){
           start_reward: 100,
           decay: .98,
           n_travel_steps: this_travel_amount,
-          press_success_prob_travel: .7,
+          press_success_prob_travel: .75,
           press_success_prob_harvest: .5,
           reward_noise: 2.5,
           start_reward_noise: 4,
-          time_min: 2,
+          time_min: 2.25,
           travel_key_seq:this_travel_key_seq,
           travel_prompt: this_travel_prompt,
           harvest_key_seq: harvest_key_seq,
-          harvest_prompt: harvest_prompt
+          harvest_prompt: this_harvest_prompt,
+          travel_held_down_keys: this_travel_held_down_keys,
         }
         this_round_trials.push(this_trial)
       }
@@ -147,7 +159,7 @@ for (var i = 0;i < forage_trials.length;  i++){
 }
 
 var task_name = 'foragetask';
-var run_name = 'run2';
+var run_name = 'run3';
 
 
 //db.collection("tasks").doc('meg_generalisation_8').collection('subjects').doc(uid).collection('trial_data').doc('trial_' + trial_data.trial_number.toString()).set({trial_data});
@@ -177,7 +189,7 @@ for (var i = 0;i < forage_trials.length;  i++){
       var text_trial = {
         type: 'evan-display-text',
         line_1: "Traveling to a new environment",
-        line_2: "Travel sequence: " + travel_prompt + ", Harvest sequence: " + harvest_prompt,
+        line_2: "To travel: " + travel_prompt + ", To harvest: repeatedly press 'u'",
         line_3: ""
       }
     } else{
@@ -191,7 +203,7 @@ for (var i = 0;i < forage_trials.length;  i++){
           return "You collected " + total_points + " points. Great work. You've completed " + (trial_num -1)+ " out of 6 rounds."  ;
         },
         line_2: "Traveling to a new environment",
-        line_3: "Travel sequence: " + travel_prompt + ", Harvest sequence: " + harvest_prompt,
+        line_3: "To travel: " + travel_prompt + ", To harvest: repeatedly press 'u'",
         //on_start: function (){
         //  last_trial_data.json()
         //}
@@ -215,6 +227,51 @@ for (var i = 0;i < forage_trials.length;  i++){
     timeline.push(text_trial);
     timeline.push(next_trial);
   }
+
+  // timeline = [];
+
+  var age_question = {
+    type: 'survey-text',
+    questions: [
+      {prompt: "How many years old are you?"}
+    ],
+    data:{trial_num: 'Q', Q_name: 'age'}
+  };
+  timeline.push(age_question);
+
+  var sex_question = {
+    type: 'evan-quiz',
+    questions: [
+      {prompt: "What is your sex?", options: ['male', 'female', 'other']}
+    ],
+    data:{trial_num: 'Q', Q_name: 'sex'}
+  };
+  timeline.push(sex_question);
+
+  var piano_question = {
+    type: 'evan-quiz',
+    questions: [
+      {prompt: "Do you either play piano or regularly engage in a similar sort of fine motor hand movement activity?", options: ['yes', 'no']}
+    ],
+    data:{trial_num: 'Q', Q_name: 'piano'}
+  };
+
+  timeline.push(piano_question);
+
+  var comment_question = {
+    type: 'survey-text',
+    questions: [
+      {prompt: "Do you have any comments on the task?"}
+    ],
+    data:{trial_num: 'Q', Q_name: 'comments'},
+    on_finish: function(){
+      var q_data = jsPsych.data.get().filter({trial_num: 'Q'}).json()
+      db.collection('foragetask').doc(run_name).collection('subjects').doc(uid).collection('taskdata').doc('Q_data').set({
+        trial_data: q_data
+      })
+    }
+  }
+  timeline.push(comment_question);
 
   // compute bonus for the main task...
   var end_screen = {
@@ -246,13 +303,15 @@ for (var i = 0;i < forage_trials.length;  i++){
 
   // need a screen thanking them for the task and also figuring out the bonus... -- do this tonight
   var instruc_images = instruction_pagelinks_a.concat(instruction_pagelinks_b);
+  instruc_images = instruc_images.concat(instruction_pagelinks_c);
+  instruc_images.push("Stimuli/warrior.svg");
 
 console.log(timeline)
 
   /* start the experiment */
   jsPsych.init({
     timeline: timeline,
-    preload_image: instruc_images,
+    preload_images: instruc_images,
     show_preload_progress_bar: true,
     on_finish: function() {
       console.log('done')
@@ -264,13 +323,14 @@ console.log(timeline)
 
 }
 
-document.getElementById('header_title').innerHTML = "Welcome";
+document.getElementById('header_title').innerHTML = "Online studies in learning, decision-making and cognition: Information and consent";
 document.getElementById('consent').innerHTML = "        <p><b>Who is conducting this research study?</b><p>\n" +
     "        <p>\n" +
-    "        This research is being conducted by the Wellcome Centre for Human Neuroimaging and the Max Planck UCL Centre\n" +
-    "        for Computational Psychiatry and Ageing Research. The lead researcher(s) for this project is\n" +
+
+    "        This research is being conducted by the Division of Psychiatry and the Max Planck UCL Centre for Computational Psychiatry\n" +
+    "        and Ageing Research at University College London, London, UK. The lead researcher(s) for this project is\n" +
     "        <a href=\"mailto:e.russek@ucl.ac.uk\">Dr Evan Russek</a>. This study has been approved by the UCL Research Ethics Committee\n" +
-    "        (project ID number 9929/003) and funded by the Wellcome Trust.\n" +
+    "        (project ID number 16639/001) and is funded by the Max Planck Society.\n" +
     "        </p>\n" +
     "\n" +
     "        <p><b>What is the purpose of this study?</b><p>\n" +
@@ -292,8 +352,8 @@ document.getElementById('consent').innerHTML = "        <p><b>Who is conducting 
     "\n" +
     "        <p><b>What will happen to me if I take part?</b><p>\n" +
     "        <p>\n" +
-    "            You will play one or more online computer games, which will last approximately 20 minutes. You will receive\n" +
-    "            at least 2.5 GBP for helping us out with an opportunity for an additional bonus depending on your choices. The amount may vary with the decisions you make in the games.\n" +
+    "            You will play one or more online computer games, which will last approximately 25 minutes. You will receive\n" +
+    "            at least 3.25 GBP for helping us out with an opportunity for an additional bonus depending on your choices. The amount may vary with the decisions you make in the games.\n" +
     "            Remember, you are free to withdraw at any time without giving a reason.\n" +
     "        </p>\n" +
     "\n" +
@@ -313,12 +373,12 @@ document.getElementById('consent').innerHTML = "        <p><b>Who is conducting 
     "        If you wish to complain or have any concerns about any aspect of the way you have been approached or treated\n" +
     "        by members of staff, then the research UCL complaints mechanisms are available to you. In the first instance,\n" +
     "        please talk to the <a href=\"mailto:e.russek@ucl.ac.uk\">researcher</a> or the chief investigator\n" +
-    "        (<a href=\"mailto:r.dolan@ucl.ac.uk\">Professor Ray Dolan</a>) about your\n" +
+    "        (<a href=\"mailto:q.huys@ucl.ac.uk\">Dr Quentin Huys</a>) about your\n" +
     "        complaint. If you feel that the complaint has not been resolved satisfactorily, please contact the chair of\n" +
     "        the <a href=\"mailto:ethics@ucl.ac.uk\">UCL Research Ethics Committee</a>.\n" +
     "\n" +
     "        If you are concerned about how your personal data are being processed please contact the data controller\n" +
-    "        who is <a href=\"mailto:protection@ucl.ac.uk\">UCL</a>.\n" +
+    "        who is <a href=\"mailto:data-protection@ucl.ac.uk\">UCL</a>.\n" +
     "        If you remain unsatisfied, you may wish to contact the Information Commissioner Office (ICO).\n" +
     "        Contact details, and details of data subject rights, are available on the\n" +
     "        <a href=\"https://ico.org.uk/for-organisations/data-protection-reform/overview-of-the-gdpr/individuals-rights\">ICO website</a>.\n" +
@@ -326,12 +386,17 @@ document.getElementById('consent').innerHTML = "        <p><b>Who is conducting 
     "\n" +
     "        <p><b>What about my data?</b><p>\n" +
     "        <p>\n" +
-    "            To help future research and make the best use of the research data you have given us (such as answers\n" +
+    "        This local privacy notice sets out the information that applies to this particular study. Further information on how UCL uses participant information can be found in our general privacy notice: \n \n " +
+    "        For participants in research studies, click <a href=\"https://www.ucl.ac.uk/legal-services/privacy/ucl-general-research-participant-privacy-notice\">here</a>    \n \n   " +
+    "        The information that is required to be provided to participants under data protection legislation (GDPR and DPA 2018) is provided across both the local and general privacy notices. \n" +
+
+    "        To help future research and make the best use of the research data you have given us (such as answers" +
     "        to questionnaires) we may keep your research data indefinitely and share these.  The data we collect will\n" +
-    "        be shared and held as follows:<br>" +
-    "            In publications, your data will be anonymised, so you cannot be identified.<br>" +
-    "            In public databases, your data will be anonymised<br>" +
+    "        be shared and held as follows:<br> \n" +
+    "        In publications, your data will be anonymised, so you cannot be identified. <br> \n" +
+    "        In public databases, your data will be anonymised (your personal details will be removed and a code used e.g. 00001232, instead of your User ID) <br>" +
     "\n" +
+    "         Personal data is any information that could be used to identify you, such as your User ID.  When we collect your data, your User ID will be replaced with a non-identifiable random ID number. No personally identifying data will be stored \n" +
     "        If there are any queries or concerns please do not hesitate to contact <a href=\"mailto:e.russek@ucl.ac.uk\">Dr Evan Russek</a>.\n" +
     "        </p>\n" +
     "\n" +

@@ -5,31 +5,65 @@ var instruction_pagelinks_a = ['Stimuli/forage_instructions/Slide1.JPG',
                             'Stimuli/forage_instructions/Slide4.JPG',
                             'Stimuli/forage_instructions/Slide5.JPG',
                             'Stimuli/forage_instructions/Slide6.JPG'];
-                            
-var instruction_pagelinks_b = ['Stimuli/forage_instructions/Slide7.JPG',
-															'Stimuli/forage_instructions/Slide8.JPG'];
 
-var practice_trial = {
-	type: 'travel-mkre',
-	start_reward: 100,
-	decay: .98,
-	n_travel_steps: 12,
-	press_success_prob_travel: .7,
-	press_success_prob_harvest: .5,
-	reward_noise: 2.5,
-	start_reward_noise: 4,
-	time_min: .75,
-	travel_key_seq: ['a', 'a', 'a', 'a','a','a', 'l', 'f', 'h'],
-	travel_prompt:  ["A (x 6) -> L (x 1) -> F (x 1) -> H (x 1)"],
-	harvest_key_seq: ['j'],
-	harvest_prompt: ['j']
-};
 
+
+var instruction_pagelinks_b = ['Stimuli/forage_instructions/Slide7.JPG'];
+
+var instruction_pagelinks_c = ['Stimuli/forage_instructions/Slide8.JPG',
+															'Stimuli/forage_instructions/Slide9.JPG']
+
+var practice_trial2 = {
+  type: 'travel-mkre',
+  start_reward: 100,
+  decay: .98,
+  n_travel_steps: 7,
+  press_success_prob_travel: .75,
+  press_success_prob_harvest: .5,
+  reward_noise: 2.5,
+  start_reward_noise: 4,
+  time_min: 1,
+  travel_key_seq: ['a'],
+  travel_prompt: ["Repeatedly press 'a' (pinky) while holding down  't' , 'e' (left) and '0', '9', 'm' (right) to travel"],
+  harvest_key_seq: ['u'],
+  harvest_prompt:  ["Press 'u' to harvest or 'a' to travel"],
+  travel_held_down_keys: ['0', '9', 'm','t','e'], //  [85, 73, 79, 80, 78]
+  show_prompt: true
+}
+
+var practice_trial1 = { // this is the easy condition...
+  type: 'travel-mkre',
+  start_reward: 100,
+  decay: .98,
+  n_travel_steps: 7,
+  press_success_prob_travel: .75,
+  press_success_prob_harvest: .5,
+  reward_noise: 2.5,
+  start_reward_noise: 4,
+  time_min: 1,
+  travel_key_seq: ['f'],
+	harvest_key_seq: ['u'],
+  travel_prompt: ["Repeatedly press 'f' (index) while holding down 'a' (left) and '0', '9', 'm' (right) to travel"],
+  harvest_prompt:  ["Press 'u' to harvest or 'f' to travel"],
+  travel_held_down_keys: ['0', '9', 'm','a'],
+  show_prompt: true
+}
 
 var pages_a = [];
 for (var i = 0; i < instruction_pagelinks_a.length; i++){
     pages_a.push('<img src= "'+ instruction_pagelinks_a[i] +  '" alt = "" >')
 }
+var pages_b = [];
+for (var i = 0; i < instruction_pagelinks_b.length; i++){
+    pages_b.push('<img src= "'+ instruction_pagelinks_b[i] +  '" alt = "" >')
+}
+var pages_c = [];
+for (var i = 0; i < instruction_pagelinks_c.length; i++){
+    pages_c.push('<img src= "'+ instruction_pagelinks_c[i] +  '" alt = "" >')
+}
+
+
+// now there's a, b and c...
 
 var instruction_pages_a = {
     type: 'instructions',
@@ -39,7 +73,13 @@ var instruction_pages_a = {
 
 var instruction_pages_b = {
     type: 'instructions',
-    pages: ['<img src= "'+ instruction_pagelinks_b[0] +  '" alt = "" >', '<img src= "'+ instruction_pagelinks_b[1] +  '" alt = "" >'],
+    pages: pages_b,
+    show_clickable_nav: true
+}
+
+var instruction_pages_c = {
+    type: 'instructions',
+    pages: pages_c,
     show_clickable_nav: true
 }
 
@@ -51,7 +91,7 @@ var questions = ["How long will each round last?", // 1
 				"What happens to the number of points a tree provides over time?", // 6
 				"When you are at a tree, how do you leave the tree?"]; // 7
 
-var options1 =  ['30 seconds', '1 minute', '90 seconds', '2 minutes', '180 seconds'];
+var options1 =  ['1 minute', '1.5 minutes', '2 minutes', '2.5 minutes', '3 minutes'];
 var correct1 = 3;
 
 var options2 = ['Total number of points collected over the entire experiment',
@@ -59,19 +99,19 @@ var options2 = ['Total number of points collected over the entire experiment',
 				'Highest single point value received on a randomly selected round'];
 var correct2 = 1;
 
-var options3 = ['Entering the TRAVEL sequence keys in order, repeatedly',
-				'Entering the HARVEST key, repeatedly',
-				'Entering the TRAVEL sequence keys in order, once',
+var options3 = ['Repeatedly entering the Travel key while holding down the hold-down keys',
+				'Repeatedly entering the the HARVEST key',
+				'Entering the TRAVEL key, once',
 				'Entering the HARVEST key, once'];
 var correct3 = 0;
 
 var options4 = ['yes', 'no'];
 var correct4 = 1;
 
-var options5 = ['Entering the TRAVEL sequence keys in order, repeatedly',
-				'Entering the HARVEST sequence key, repeatedly',
-				'Entering the TRAVEL sequence keys once.',
-				'Entering the HARVEST sequence key once.'];
+var options5 = ['Repeatedly entering the Travel key while holding down the hold-down keys',
+				'Repeatedly entering the the HARVEST key',
+				'Entering the TRAVEL key, once',
+				'Entering the HARVEST key, once'];
 var correct5 = 1;
 
 var options6 = ['The number of points decreases over time.',
@@ -80,7 +120,7 @@ var options6 = ['The number of points decreases over time.',
 
 var correct6 = 0;
 
-var options7 = ['Entering the TRAVEL sequence.',
+var options7 = ['Entering the TRAVEL key.',
 				'Entering the HARVEST key.'];
 var correct7 = 0;
 
@@ -159,8 +199,10 @@ var conditional_splash = {
 
 var intro_w_trials = [];
 intro_w_trials.push(instruction_pages_a);
-intro_w_trials.push(practice_trial);
+intro_w_trials.push(practice_trial1);
 intro_w_trials.push(instruction_pages_b);
+intro_w_trials.push(practice_trial2);
+intro_w_trials.push(instruction_pages_c);
 intro_w_trials.push(instruction_check);
 intro_w_trials.push(conditional_splash);
 
@@ -190,7 +232,7 @@ var finish_instruc_screen = {
 	//    button_html: '<button class="jspsych-btn" style="display:none">%choice%</button>',
 	choices: ['Begin the task!'],
 	is_html: true,
-	stimulus: 'You passed the quiz! Great work. The task will take about 20 minutes. Press the button to begin.'
+	stimulus: 'You passed the quiz! Great work. The task will take about 17 minutes. Press the button to begin.'
 }
 
 intro_w_trials.push(finish_instruc_screen);

@@ -72,17 +72,17 @@ var this_trial = {
   type: 'travel-mkre',
   start_reward: 100,
   decay: .98,
-  n_travel_steps: this_travel_amount,
-  press_success_prob_travel: .7,
+  n_travel_steps: 10,
+  press_success_prob_travel: .75,
   press_success_prob_harvest: .5,
   reward_noise: 2.5,
   start_reward_noise: 4,
   time_min: 1.5,
   travel_key_seq: ['a'],
-  travel_prompt: ["Press 'a' while holding down 'f', 'u' and 'p'  to travel"],
-  harvest_key_seq: ['j'],
-  harvest_prompt:  ["Press 'j' to harvest or 'a' to travel"],
-  travel_held_down_keys: ['f', 'd', 'u', 'i', 'o', 'p', 'n'],
+  travel_prompt: ["Repeatedly press 'a' while holding down  '0', '9', 'm' (right) and 't' , 'r' (left) to travel"],
+  harvest_key_seq: ['u'],
+  harvest_prompt:  ["Press 'u' to harvest or 'a' to travel"],
+  travel_held_down_keys: ['0', '9', 'm','t','r'], //  [85, 73, 79, 80, 78]
   show_prompt: true
 }
 
@@ -93,16 +93,16 @@ var this_trial2 = { // this is the easy condition...
   start_reward: 100,
   decay: .98,
   n_travel_steps: this_travel_amount,
-  press_success_prob_travel: .7,
+  press_success_prob_travel: .75,
   press_success_prob_harvest: .5,
   reward_noise: 2.5,
   start_reward_noise: 4,
   time_min: 1.5,
   travel_key_seq: ['f'],
-  travel_prompt: ["Press 'f' while holding down 'a', 'u' and 'p'  to travel"],
-  harvest_key_seq: ['j'],
-  harvest_prompt:  ["Press 'j' to harvest or 'f' to travel"],
-  travel_held_down_keys: ['a', 'u', 'p'],
+  travel_prompt:  ["Repeatedly press 'f' while holding down  '0', '9', 'm' (right) and 'a' (left) to travel"],
+  harvest_key_seq: ['u'],
+  harvest_prompt:  ["Press 'u' to harvest or 'f' to travel"],
+  travel_held_down_keys: ['0', '9', 'm','a'],
   show_prompt: true
 }
 
@@ -131,7 +131,7 @@ var this_trial2 = { // this is the easy condition...
       var text_trial = {
         type: 'evan-display-text',
         line_1: "Traveling to a new environment",
-        line_2: travel_prompt + ". Press j to harvest",
+        line_2: travel_prompt + ". Press 'u' to harvest",
         line_3: ""
       }
     } else{
@@ -155,7 +155,7 @@ var this_trial2 = { // this is the easy condition...
   }
 
   // shuffle these
-  var trials = [this_trial];
+  var trials = [this_trial2];
 
   /* create timeline */
   var timeline = [];

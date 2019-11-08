@@ -104,17 +104,21 @@ jsPsych.plugins["travel-mkre"] = (function() {
     }
 
 
-    var map = {};
-    for (var i = 0; i < trial.travel_held_down_keys; i++){
-      map[jsPsych.pluginAPI.convertKeyCharacterToKeyCode] = false
+    map = {};
+    for (var i = 0; i < travel_held_down_key_codes.length; i++){
+      map[travel_held_down_key_codes[i]] = false;
     }
+    console.log(map)
 
-    $(document).keydown(function(e) {
+  // $(document).keydown(function(e) {
+  hold_down_key_listener = $(document).keydown(function(e) {
+
+        console.log('key_pressed: ' + jsPsych.pluginAPI.convertKeyCodeToKeyCharacter(e.keyCode))
         if (e.keyCode in map) {
             map[e.keyCode] = true;
-            if (map[68] && map[69] && map[86]) {
+          //  if (map[68] && map[69] && map[86]) {
                 // FIRE EVENT
-            }
+          //  }
         }
     }).keyup(function(e) {
         if (e.keyCode in map) {
@@ -122,14 +126,28 @@ jsPsych.plugins["travel-mkre"] = (function() {
         }
     });
 
-        keyPressed = {};
+  /*  document.addEventListener('keydown', function(e) {
+      console.log('key_pressed: ' + jsPsych.pluginAPI.convertKeyCodeToKeyCharacter(e.keyCode))
+      }, false);
+
+      document.addEventListener('keydown', function(e) {
+        console.log('key_pressed: ' + jsPsych.pluginAPI.convertKeyCodeToKeyCharacter(e.keyCode))
+      }, false); */
+
+//    document.addEventListener('keyup', function(e) {
+//      //keyPressed[e.keyCode] = false;
+//      delete keyPressed[e.keyCode]
+//    }, false);
+
+
+/*        keyPressed = {};
         document.addEventListener('keydown', function(e) {
             keyPressed[e.keyCode] = true;    }, false);
 
         document.addEventListener('keyup', function(e) {
           //keyPressed[e.keyCode] = false;
           delete keyPressed[e.keyCode]
-        }, false);
+        }, false); */
 
 
 
@@ -137,11 +155,11 @@ jsPsych.plugins["travel-mkre"] = (function() {
     var travel_keys_down = function(){
       var n_down = 0;
       for (var i = 0; i<travel_held_down_keys.length; i++){
-        if (keyPressed[travel_held_down_key_codes[i]] == true){
+        if (map[travel_held_down_key_codes[i]] == true){
           n_down = n_down + 1;
         }
       }
-      console.log('n_down ' + n_down)
+    //  console.log('n_down ' + n_down)
       return (n_down == travel_held_down_keys.length)
     }
 
@@ -226,12 +244,12 @@ jsPsych.plugins["travel-mkre"] = (function() {
 
       var get_key_down_list = function(){
         var key_down_list = [];
-          Object.keys(keyPressed).forEach(function(key) {
-            if (keyPressed[key] == true){
+          Object.keys(map).forEach(function(key) {
+            if (map[key] == true){
               key_down_list.push(jsPsych.pluginAPI.convertKeyCodeToKeyCharacter(key))
             }
           });
-          console.log(key_down_list)
+        //  console.log(key_down_list)
           return key_down_list;
       }
 
@@ -239,13 +257,13 @@ jsPsych.plugins["travel-mkre"] = (function() {
 
         var draw_keys_down = function(){
           var key_down_list = get_key_down_list();
-          console.log(key_down_list)
+      //    console.log(key_down_list)
           d3.selectAll(".keys_down").remove();
           // want the center to be at w/2 - w/2 - travel_key_seq.length/2*w/4
           var el_space = par.w/30;
           var key_ctr = par.w/3;
           var y_ctr = 4.5*par.h/6;
-          for (tk = 0; tk < key_down_list.length; tk++){
+          /*for (tk = 0; tk < key_down_list.length; tk++){
 
           d3.select("svg").append("text")
                     .attr("class", "keys_down")
@@ -258,7 +276,20 @@ jsPsych.plugins["travel-mkre"] = (function() {
                     .attr("fill", "white")
                     .style("opacity",1)
                     .text(key_down_list[tk])
-          }
+          }*/
+
+
+          if (travel_keys_down()){
+            d3.select("svg").append("line")
+              .attr("class", "keys_down")
+              .attr("x1", 0)
+              .attr("x1", person_x_pos_middle)
+              .attr("x2", tree_x_pos_middle + tree_circ_rad)
+              .attr("y1", tree_y + tree_rect_height)
+              .attr("y2", tree_y + tree_rect_height)
+              .attr("stroke", "orange")
+              .attr("stroke-width", 3)
+            }
         }
 
       //  document.addEventListener('keydown', draw_keys_down(), false);
@@ -355,9 +386,9 @@ jsPsych.plugins["travel-mkre"] = (function() {
 
 
 
-      window.setInterval(function(){
-      draw_keys_down();
-      }, 100);
+      draw_floor = window.setInterval(function(){
+        draw_keys_down();
+      }, 50);
 
 
     ////////////////////////////////////////
@@ -827,6 +858,12 @@ jsPsych.plugins["travel-mkre"] = (function() {
 
           /// stage 4 - end trial, save data,
       var end_trial = function(){
+        clearInterval(draw_floor);
+        $(document).unbind('keydown');
+        $(document).unbind('keyup');
+
+
+        // kill hold down key listener -- jquery
 
         person_pos = null;
         tree_pos = null;
