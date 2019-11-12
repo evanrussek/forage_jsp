@@ -68,7 +68,7 @@ function task(uid){
   // create a reference to the database
   var db = firebase.firestore();
 
-  var run_name = 'run2';
+  var run_name = 'run4';
 
   // record new date and start time
   db.collection('foragetask').doc(run_name).collection('subjects').doc(uid).set({
@@ -89,18 +89,18 @@ function task(uid){
   };
 
   // we'll vary the travel amount?
-  var travel_amounts = [5, 10, 15];
+  var travel_amounts = [8, 16, 32];
   var harvest_key_seq = ['u'];
   var harvest_prompt = ['u'];
 
   var travel_key_seq_hard = ['a'];
   var travel_hold_down_keys_hard = ['0', '9', 'm','t','e'];
-  var travel_prompt_hard = ["Repeatedly press 'a' (pinky) while holding down  't' , 'e' (left) and '0', '9', 'm' (right) to travel"];
+  var travel_prompt_hard = ["Repeatedly press 'a' (left pinky) while holding down  't' , 'e' (left) and '0', '9', 'm' (right) to travel"];
   var harvest_prompt_hard =  ["Repeatedly press 'u' to harvest or 'a' to travel"];
 
-  var travel_hold_down_keys_easy = ['0', '9', 'm','a'];
+  var travel_hold_down_keys_easy = ['0', '9', 'm'];
   var travel_key_seq_easy =['f'];
-  var travel_prompt_easy = ["Repeatedly press 'f' (index) while holding down 'a' (left) and '0', '9', 'm' (right) to travel"];
+  var travel_prompt_easy = ["Repeatedly press 'f' (left index) while holding down '0', '9', 'm' (right) to travel"];
   var harvest_prompt_easy=  ["Repeatedly press 'u' to harvest or 'f' to travel"];
 
   var n_rounds = 1;
@@ -133,11 +133,11 @@ function task(uid){
           start_reward: 100,
           decay: .98,
           n_travel_steps: this_travel_amount,
-          press_success_prob_travel: .75,
+          press_success_prob_travel: .8,
           press_success_prob_harvest: .5,
           reward_noise: 2.5,
           start_reward_noise: 4,
-          time_min: 2.25,
+          time_min: 2.34,
           travel_key_seq:this_travel_key_seq,
           travel_prompt: this_travel_prompt,
           harvest_key_seq: harvest_key_seq,
@@ -159,7 +159,6 @@ for (var i = 0;i < forage_trials.length;  i++){
 }
 
 var task_name = 'foragetask';
-var run_name = 'run3';
 
 
 //db.collection("tasks").doc('meg_generalisation_8').collection('subjects').doc(uid).collection('trial_data').doc('trial_' + trial_data.trial_number.toString()).set({trial_data});

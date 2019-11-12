@@ -17,14 +17,14 @@ var practice_trial2 = {
   type: 'travel-mkre',
   start_reward: 100,
   decay: .98,
-  n_travel_steps: 7,
-  press_success_prob_travel: .75,
+  n_travel_steps: 12,
+  press_success_prob_travel: .8,
   press_success_prob_harvest: .5,
   reward_noise: 2.5,
   start_reward_noise: 4,
   time_min: 1,
   travel_key_seq: ['a'],
-  travel_prompt: ["Repeatedly press 'a' (pinky) while holding down  't' , 'e' (left) and '0', '9', 'm' (right) to travel"],
+  travel_prompt: ["Repeatedly press 'a' (left pinky) while holding down  't' , 'e' (left) and '0', '9', 'm' (right) to travel"],
   harvest_key_seq: ['u'],
   harvest_prompt:  ["Press 'u' to harvest or 'a' to travel"],
   travel_held_down_keys: ['0', '9', 'm','t','e'], //  [85, 73, 79, 80, 78]
@@ -35,7 +35,7 @@ var practice_trial1 = { // this is the easy condition...
   type: 'travel-mkre',
   start_reward: 100,
   decay: .98,
-  n_travel_steps: 7,
+  n_travel_steps: 12,
   press_success_prob_travel: .75,
   press_success_prob_harvest: .5,
   reward_noise: 2.5,
@@ -43,9 +43,9 @@ var practice_trial1 = { // this is the easy condition...
   time_min: 1,
   travel_key_seq: ['f'],
 	harvest_key_seq: ['u'],
-  travel_prompt: ["Repeatedly press 'f' (index) while holding down 'a' (left) and '0', '9', 'm' (right) to travel"],
+  travel_prompt: ["Repeatedly press 'f' (left index) while holding down '0', '9', 'm' (right) to travel"],
   harvest_prompt:  ["Press 'u' to harvest or 'f' to travel"],
-  travel_held_down_keys: ['0', '9', 'm','a'],
+  travel_held_down_keys: ['0', '9', 'm'],
   show_prompt: true
 }
 
