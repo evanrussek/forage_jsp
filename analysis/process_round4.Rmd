@@ -66,7 +66,7 @@ plot_subj_reward_v_press <- function(subj_data){
   # reward plots which show the threshold... 
   rew_plot <- ggplot(subj_data, aes(x = press_num, y = reward_obs, group = round))  +
     #geom_rect(data = t1_data, aes(xmin = press_num - 0.5, xmax = press_num + 0.5, ymin = -Inf, ymax = Inf, fill = round)) +
-    geom_point(aes(color = phase)) + facet_grid(n_travel_steps ~ travel_key_cond) + theme(legend.position = "none") + ylim(0,110) + ggtitle(paste("subj: ", s_num))
+    geom_point(aes(color = phase)) + facet_grid(n_travel_steps ~ travel_key_cond) + theme(legend.position = "none") + ylim(0,110) + ggtitle(paste("subj: ", s_num)) + ylab('reward collected') + xlab('button press number') + theme_minimal()
   
  # plot_an <- annotate_figure(plot, top = paste('subj: ', s_num))
   plot(rew_plot)
@@ -74,9 +74,17 @@ plot_subj_reward_v_press <- function(subj_data){
 }
 for (s in 1:22){
   subj_data <- cdata %>% filter(s_num == s)
+  subj_data$round_num <- as.integer(as.character(subj_data$round))
+
+  #subj_data <- subj_data %>% group_by(travel_key_cond, n_travel_steps) %>% mutate(press_num = 1:n()) %>% ungroup()
   plot_subj_reward_v_press(subj_data)  
 }
 ```
+```{r}
+subj_data$round_num 
+```
+
+
 ```{r}
 get_trial_exits <- function(thdata){
     # get harvest
@@ -141,6 +149,8 @@ mn_exit <- exit_data %>% group_by(s_num, n_travel_steps, travel_key_cond) %>%
 # now just plot this for each subject -- draw lines to show easy - hard effect
 ggplot(mn_exit, aes(x = travel_key_cond, y = exit_thresh)) + geom_dotplot(binaxis = 'y', aes(fill = subj), dotsize = 1.2) + geom_line(aes(group = subj, color = subj), size = 1.2) +
   facet_grid(.~n_travel_steps) + theme_minimal() + labs(y = 'Mean Last Reward Collected', x = 'Travel Sequence', subtitle = '# Travel Presses') #theme(legend.position = "none")
+ggsave('reward_press2.png')
+
 
 ggplot(mn_exit, aes(x = factor(n_travel_steps), y = exit_thresh)) +
   geom_dotplot(binaxis = 'y', aes(fill = subj), dotsize = 1.2) + 
@@ -149,6 +159,7 @@ ggplot(mn_exit, aes(x = factor(n_travel_steps), y = exit_thresh)) +
   theme_minimal() + 
   labs(y = 'Mean Last Reward Collected', x = 'Travel Key Condition', subtitle = '# Travel Presses') 
   #theme(legend.position = "none")
+ggsave('reward_press.png')
 
 ```
 ```{r}
@@ -159,6 +170,7 @@ ggplot(gmn_exit, aes(x = factor(n_travel_steps), y = gm_thresh, color = travel_k
   geom_line(aes(group = travel_key_cond), size = 2) +
   geom_errorbar(aes(ymin = gm_thresh - gsd_thresh, ymax = gm_thresh+gsd_thresh), width = .1, size = 2) + 
 geom_point(size = 4) + ylab('group mean exit threshold') + xlab('# travel steps') + labs(color = 'travel effort') + theme_minimal()
+ggsave('group mean exit thresh.png')
 
 ```
 
@@ -170,6 +182,7 @@ exit_model <- lmer(last_reward ~ n_travel_steps + travel_key_cond  + (1  + n_tra
 summary(exit_model)
                    
 ```
+
 ```{r}
 library(broom.mixed)
 td <- tidy(exit_model, conf.int = TRUE)
@@ -180,6 +193,7 @@ tdsome <- tdsome %>% mutate(parameter = case_when(term == 'n_travel_steps' ~ 'tr
 ggplot(tdsome, aes(estimate,parameter,color = parameter)) + 
   geom_point(size = 2)  +
 geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), size = 1.2) + theme(legend.position = "none") + theme_minimal() + ylab('fixed effect') + xlab('estimate (# points)') + ggtitle('linear mixed effects model - effect on exit threshold') + theme(axis.text.y = element_text(angle = 90, hjust = .5))
+ggsave('exit model.png')
 ```
 
 ```{r}
@@ -193,25 +207,47 @@ ggplot(lag_data, aes(x=lag)) + geom_histogram(binwidth = 10) + xlim(50,300) + fa
 
 #ggplot(lag_data, aes(x=log_lag))  + geom_histogram(binwidth = .01) + facet_wrap( ~ s_num)
 
-filt_lag <- lag_data %>% group_by(s_num) %>% filter(log_lag < (mean(log_lag) + 3*sd(log_lag)) , log_lag > (mean(log_lag) - 3*sd(log_lag))) %>% ungroup()
+filt_lag <- lag_data %>% group_by(s_num) %>% filter(log_lag < (mean(log_lag) + 1.5*sd(log_lag)) , log_lag > (mean(log_lag) - 1.5*sd(log_lag))) %>% ungroup()
 
 ggplot(filt_lag, aes(x=lag)) + geom_histogram(binwidth = 10)  + facet_wrap(~s_num) + xlim(50,350)
 
 ggplot(filt_lag, aes(x=log_lag)) + geom_histogram(binwidth = .02) + facet_wrap(~s_num)
 
-
-
 ```
+
 ```{r}
 ## with a run, plot the mean lag 
 round_filt_lag <- filt_lag %>% 
   group_by(s_num, n_travel_steps, travel_key_cond, round, phase) %>%
-  summarise(trial_num = first(trial_num), mean_lag = mean(lag), mean_log_lag = mean(log_lag)) %>% mutate(round_num = as.integer(as.character(round)))
+  summarise(trial_num = first(trial_num), mean_lag = median(lag), mean_log_lag = median(log_lag)) %>% mutate(round_num = as.integer(as.character(round)))
 
-# plot mean lag as a function of round number
-lag_by_round <- round_filt_lag %>% group_by(s_num, round_num) %>% summarise(mean_lag = mean(mean_lag))
+for (s in 1:22){
+  
+  # plot mean lag as a function of round number
+  p <- ggplot(round_filt_lag %>% filter(s_num == s), aes(x = round_num, y = mean_log_lag, color = phase)) + geom_point(size = 2) +facet_grid(n_travel_steps ~ travel_key_cond) + geom_line(size = 1.2)  + xlab('harvest/travel number') + ylab('mean log lag') + ggtitle(paste('subj: ', s)) + theme_minimal()
+  plot(p)
+  
+}
+ 
 
-ggplot(lag_by_round, aes(x= round_num, y = mean_lag)) + geom_point() + geom_line() + facet_wrap(~s_num)
+```
+```{r}
+library(plotrix)
+cond_round_filt_lag <- round_filt_lag %>% 
+  group_by(n_travel_steps, travel_key_cond, round_num, phase) %>%
+  summarise(mean_log_lag = median(mean_log_lag), sd_lag = std.error(mean_log_lag))
+
+p <- ggplot(cond_round_filt_lag, aes(x = round_num, y = mean_log_lag, color = phase)) + geom_point(size = 2) +facet_grid(n_travel_steps ~ travel_key_cond) + geom_line(size = 1.2) + geom_linerange(aes(ymin = mean_log_lag - sd_lag, ymax = mean_log_lag + sd_lag)) +
+  xlab('harvest/travel number') + ylab('mean log lag') + ggtitle('group: ') +  theme_minimal()
+
+plot(p)
+```
+```{r}
+cond_round_filt_lag
+```
+
+
+```{r}
 
 trial_filt_lag <- round_filt_lag %>% 
   group_by(s_num, n_travel_steps, travel_key_cond, phase) %>%
@@ -220,10 +256,10 @@ trial_filt_lag <- round_filt_lag %>%
             mean_log_lag = mean(mean_log_lag)) %>% ungroup() %>% mutate(s_num = as.factor(s_num))
 
 ggplot(trial_filt_lag, 
-       aes(x = factor(n_travel_steps), y = mean_lag, fill = s_num)) + 
+       aes(x = factor(n_travel_steps), y = mean_log_lag, fill = s_num)) + 
   geom_point(aes(color = s_num), size = 2)+ 
   geom_line(aes(group = s_num, color = s_num), size = 1.2) +
-  facet_grid(phase ~ travel_key_cond) + theme_minimal()
+  facet_grid(phase ~ travel_key_cond) + theme_minimal() + xlab('# travel steps') + ylab('log lag time')
 
 ggplot(trial_filt_lag, 
        aes(x = travel_key_cond, y = mean_lag, fill = s_num)) + 
@@ -237,20 +273,34 @@ ggplot(trial_filt_lag,
 
 group_lag <- trial_filt_lag %>% group_by(n_travel_steps, travel_key_cond, phase) %>% summarise(gm_lag = mean(mean_lag), gml_lag = mean(mean_log_lag)) %>% ungroup()
 
-ggplot(group_lag, aes(x = factor(n_travel_steps), y = gm_lag, color = travel_key_cond)) +
-  geom_line(aes(group = travel_key_cond), size = 2) + facet_wrap(~phase) + geom_point(size = 2)
- # geom_errorbar(aes(ymin = gm_thresh - gsd_thresh, ymax = gm_thresh+gsd_thresh), width = .1, size = 2) + 
-#geom_point(size = 4) + ylab('group mean exit threshold') + xlab('# travel steps') + labs(color = 'travel effort') + theme_minimal()
+ggplot(group_lag, aes(x = factor(n_travel_steps), y = gml_lag, color = travel_key_cond)) +
+  geom_line(aes(group = travel_key_cond), size = 2) + facet_wrap(~phase) + geom_point(size = 2) +xlab('# travel steps') +
+  ylab('group mean log lag') + theme_minimal()
 
 
 
 ```
 ```{r}
-harvest_lag <- filt_lag %>% ungroup() %>% filter(phase == "HARVEST")
-hl_model <- lmer(log_lag ~ trial_num + n_travel_steps + travel_key_cond  + (1 + trial_num + n_travel_steps + travel_key_cond |subj), data = harvest_lag, control = lmerControl(optimizer ="optimx",optCtrl=list(method='nlminb')))
-```
+harvest_lag <- round_filt_lag %>% ungroup() %>% filter(phase == "HARVEST") %>% mutate(subj = as.factor(s_num))
+head(harvest_lag)
 
-```{r}
+hl_model <- lmer(scale(mean_log_lag) ~  n_travel_steps + travel_key_cond + round_num  + (1 + n_travel_steps+ travel_key_cond + round_num |subj), data = harvest_lag, control = lmerControl(optimizer ="optimx",optCtrl=list(method='nlminb')))
+
 summary(hl_model)
+```
+
+
+
+```{r}
+library(broom.mixed)
+td <- tidy(hl_model, conf.int = TRUE)
+tdsome <- td %>% filter(term == 'n_travel_steps' | term == 'travel_key_condHARD' | term == 'round_num')
+
+tdsome <- tdsome %>% mutate(parameter = case_when(term == 'n_travel_steps' ~ 'travel step', term == 'travel_key_condHARD' ~ 'travel effort cond', term == 'round_num' ~ 'round number'))
+
+ggplot(tdsome, aes(estimate,parameter,color = parameter)) + 
+  geom_point(size = 2)  +
+geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), size = 1.2) + theme(legend.position = "none") + theme_minimal() + ylab('fixed effect') + xlab('estimate (# points)') + ggtitle('linear mixed effects model - effect on lag') + theme(axis.text.y = element_text(angle = 90, hjust = .5))
+
 ```
 
