@@ -63,3 +63,4 @@ node_modules/
 
 # dotenv environment variables file
 .env
+.ipynb_checkpoints/get_online_data-checkpoint.ipynb
