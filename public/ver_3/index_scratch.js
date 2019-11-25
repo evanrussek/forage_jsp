@@ -72,12 +72,12 @@ var this_trial = {
   type: 'travel-mkre',
   start_reward: 100,
   decay: .98,
-  n_travel_steps: 10,
+  n_travel_steps: 7,
   press_success_prob_travel: .75,
   press_success_prob_harvest: .5,
   reward_noise: 2.5,
   start_reward_noise: 4,
-  time_min: 1.5,
+  time_min: .25,
   travel_key_seq: ['a'],
   travel_prompt: ["Repeatedly press 'a' while holding down  '0', '9', 'm' (right) and 't' , 'r' (left) to travel"],
   harvest_key_seq: ['u'],
@@ -92,17 +92,17 @@ var this_trial2 = { // this is the easy condition...
   type: 'travel-mkre',
   start_reward: 100,
   decay: .98,
-  n_travel_steps: this_travel_amount,
-  press_success_prob_travel: .75,
+  n_travel_steps: 7,
+  press_success_prob_travel: .8,
   press_success_prob_harvest: .5,
   reward_noise: 2.5,
   start_reward_noise: 4,
-  time_min: 1.5,
+  time_min: .25,
   travel_key_seq: ['f'],
-  travel_prompt:  ["Repeatedly press 'f' while holding down  '0', '9', 'm' (right) and 'a' (left) to travel"],
+  travel_prompt:  ["Repeatedly press 'f' while holding down  '0', '9', 'm' (right) to travel"],
   harvest_key_seq: ['u'],
   harvest_prompt:  ["Press 'u' to harvest or 'f' to travel"],
-  travel_held_down_keys: ['0', '9', 'm','a'],
+  travel_held_down_keys: ['0', '9', 'm'],
   show_prompt: true
 }
 
@@ -155,7 +155,7 @@ var this_trial2 = { // this is the easy condition...
   }
 
   // shuffle these
-  var trials = [this_trial2];
+  var trials = [this_trial2, this_trial];
 
   /* create timeline */
   var timeline = [];
