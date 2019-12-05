@@ -103,14 +103,13 @@ jsPsych.plugins["evan-select-env"] = (function() {
     place_text("HARD", "HARD",  par.w/2 - par.w/6 + par.w/5+ par.w/12, par.h/3 + par.h/6 + rect_height/2 + 12, 35, .25, "white")
 
     wait_for_time(1000,function(){
-      d3.selectAll('.' + 'LOW').transition().style("opacity", 1).duration(1000)
+      d3.selectAll('.' + trial.rew_cond).transition().style("opacity", 1).duration(1000)
     })
     wait_for_time(2000,function(){
-      d3.selectAll('.' + 'HARD').transition().style("opacity", 1).duration(1000)
+      d3.selectAll('.' + trial.travel_cond).transition().style("opacity", 1).duration(1000)
     }
 
     // show the travel prompt -- to travel in this environment
-
   );
 
 

@@ -36,7 +36,7 @@
       var this_round_trials = [];
       for (d_idx = 0; d_idx < 2; d_idx++){ // key difficulty...
         for (rew_idx = 0; rew_idx < reward_amounts.length; rew_idx++){ // travel index
-          var this_travel_amount = travel_amounts[ta_idx];
+          var this_rew_amount = reward_amounts[rew_idx];
           if (d_idx == 0){ // 0 is easy...
               var this_travel_key_seq = travel_key_seq_easy;
               var this_travel_prompt = travel_prompt_easy;
@@ -59,7 +59,7 @@
             press_success_prob_harvest: .5,
             reward_noise: 2.5,
             start_reward_noise: 4,
-            time_min: 2.34,
+            time_min: .2,
             travel_key_seq:this_travel_key_seq,
             travel_prompt: this_travel_prompt,
             harvest_key_seq: harvest_key_seq,
@@ -73,7 +73,8 @@
           this_round_trials.push(this_trial)
         }
       }
-      forage_trials = forage_trials.concat(jsPsych.randomization.shuffle(this_round_trials,1));
+      forage_trials = forage_trials.concat(this_round_trials);
+      //forage_trials = forage_trials.concat(jsPsych.randomization.shuffle(this_round_trials,1));
     }
 
 
@@ -87,39 +88,41 @@
   var task_name = 'foragetask';
 
 //db.collection("tasks").doc('meg_generalisation_8').collection('subjects').doc(uid).collection('trial_data').doc('trial_' + trial_data.trial_number.toString()).set({trial_data});
-var make_info_trial = function
+//var make_info_trial = function(){
 
 
-  var make_text_trial = function(travel_prompt, harvest_prompt, trial_num){
-    if (trial_num == 1){
+//}
+
+
+  var make_start_trial = function(travel_prompt, harvest_prompt, rew_text, trial_num){
       var text_trial = {
         type: 'evan-display-text',
-        line_1: "Traveling to a new environment",
-        line_2: travel_prompt + ". Press 'u' to harvest",
-        line_3: ""
+        line_1: "Traveling to the new environment",
+        line_2: "Trees in this environment will all start with a " + rew_text + " number of points.",
+        line_3: travel_prompt + ". Press 'u' to harvest",
       }
-    } else{
-      var text_trial = {
-        type: 'evan-display-text',
-        line_1: function(){
-          var lasttimelinedata = jsPsych.data.getLastTimelineData();
-          var total_points = lasttimelinedata.values().pop().total_points
-          total_points_arr.push(total_points);
-          console.log(lasttimelinedata)
-          return "You collected " + total_points + " points. Great work. You've completed " + (trial_num -1)+ " out of 12 rounds."  ;
-        },
-        line_2: "Traveling to a new environment",
-        line_3: "Travel sequence: " + travel_prompt + ", Harvest sequence: " + harvest_prompt,
-        //on_start: function (){
-        //  last_trial_data.json()
-        //}
-      }
+    return text_trial
+  }
+
+  var make_summary_trial = function(travel_prompt, harvest_prompt, trial_num){
+    var text_trial = {
+      type: 'evan-display-text',
+      line_1: function(){
+        var lasttimelinedata = jsPsych.data.getLastTimelineData();
+        var total_points = lasttimelinedata.values().pop().total_points
+        total_points_arr.push(total_points);
+        console.log(lasttimelinedata)
+        return "You collected " + total_points + " points.";
+      },
+      line_2: "Great work.",
+      line_3: "You've completed " + (trial_num)+ " out of 6 rounds.",
     }
     return text_trial
   }
 
+
   // shuffle these
-  var trials = [this_trial2, this_trial];
+  var trials = forage_trials;
 
   /* create timeline */
   var timeline = [];
@@ -128,10 +131,20 @@ var make_info_trial = function
 //  timeline = timeline.concat(intro_w_trials);
 
   for (i = 0; i < trials.length; i++){
-    var next_trial = trials[i];
-    var text_trial = make_text_trial(next_trial.travel_prompt, next_trial.harvest_prompt, i + 1)
-    timeline.push(text_trial);
-    timeline.push(next_trial);
+    var next_task_trial = trials[i];
+
+    var info_trial = {
+      type: 'evan-select-env',
+      rew_cond: next_task_trial.reward_name,
+      travel_cond: next_task_trial.travel_name
+    }
+
+    var next_trial_text = make_start_trial(next_task_trial.travel_prompt, next_task_trial.harvest_prompt,next_task_trial.reward_name, i + 1);
+    var summary_trial = make_summary_trial(next_task_trial.travel_prompt, next_task_trial.harvest_prompt, i + 1);
+    timeline.push(info_trial);
+    timeline.push(next_trial_text);
+    timeline.push(next_task_trial);
+    timeline.push(summary_trial);
   }
 
   // compute bonus for the main task...
@@ -172,10 +185,9 @@ console.log(timeline)
 
 // timeline --
 
-var info_trial = {
-  type: 'evan-select-env'
-}
-timeline = [full_screen, info_trial];
+
+
+//timeline = [full_screen, info_trial];
 
   /* start the experiment */
   jsPsych.init({
