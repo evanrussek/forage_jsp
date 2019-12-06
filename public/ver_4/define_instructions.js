@@ -15,9 +15,9 @@ var instruction_pagelinks_c = ['Stimuli/forage_instructions/Slide8.JPG',
 
 var practice_trial2 = {
   type: 'travel-mkre',
-  start_reward: 100,
+  start_reward: 75,
   decay: .98,
-  n_travel_steps: 12,
+  n_travel_steps: 16,
   press_success_prob_travel: .8,
   press_success_prob_harvest: .5,
   reward_noise: 2.5,
@@ -33,9 +33,9 @@ var practice_trial2 = {
 
 var practice_trial1 = { // this is the easy condition...
   type: 'travel-mkre',
-  start_reward: 100,
+  start_reward: 75,
   decay: .98,
-  n_travel_steps: 12,
+  n_travel_steps: 16,
   press_success_prob_travel: .75,
   press_success_prob_harvest: .5,
   reward_noise: 2.5,
@@ -89,7 +89,9 @@ var questions = ["How long will each round last?", // 1
 				"Is the TRAVEL sequence the same in every round?", // 4
 				"When you are at a tree, how do you collect points?", // 5
 				"What happens to the number of points a tree provides over time?", // 6
-				"When you are at a tree, how do you leave the tree?"]; // 7
+				"When you are at a tree, how do you leave the tree?", // 7
+				"What factors makes the different environments different?",
+				"How many points do trees start with in MEDIUM tree richness environments?"]; // 8
 
 var options1 =  ['1 minute', '1.5 minutes', '2 minutes', '2.5 minutes', '3 minutes'];
 var correct1 = 3;
@@ -124,11 +126,24 @@ var options7 = ['Entering the TRAVEL key.',
 				'Entering the HARVEST key.'];
 var correct7 = 0;
 
+var options8 = ['Number of button presses required to travel to a new tree.',
+					'The rate at which the number of points at a tree falls.',
+				'Difficulty of traveling and Tree point richness for number of the points it starts at.'];
+var correct8 = 2;
+
+var options9 = [50,
+								75,
+								100];
+var correct9 = 1;
+
+
 // build the quiz...
 var corr_string = '{"Q0":' + '"'+options1[correct1]+'",' + '"Q1":' + '"'+options2[correct2]+'",'
     + '"Q2":' + '"'+options3[correct3]+'",' + '"Q3":' + '"'+options4[correct4]+'",' +
     '"Q4":' + '"'+options5[correct5]+'",' + '"Q5":' + '"'+options6[correct6]+'",'
-      + '"Q6":' + '"'+options7[correct7]+'"'+ '}';
+      + '"Q6":' + '"'+options7[correct7]+'",'
+			+ '"Q7":' + '"'+options8[correct8]+'",'
+			+ '"Q8":' + '"'+options9[correct9]+'"' + '}';
 
 var preamble = ["<p align='center'><b>Please answer every question. Answering 'I do not know' or answering incorrectly will require you return to the beginning of the instructions. </b></p>"];
 
@@ -151,7 +166,11 @@ var instruction_check = {
           {prompt: "<b>Question 6</b>: " + questions[5],
                       options: options6, required: true},
           {prompt: "<b>Question 7</b>: " + questions[6],
-                                  options: options7, required: true}
+                                  options: options7, required: true},
+					{prompt: "<b>Question 8</b>: " + questions[7],
+								options: options8, required: true},
+					{prompt: "<b>Question 9</b>: " + questions[8],
+											options: options9, required: true}
   		],
   		on_finish: function(data) {
 					console.log(data.responses)
@@ -163,7 +182,7 @@ var instruction_check = {
 			var post_choices = data.choice_idxs
 			// this is global
 			incor_questions = ['<br> </br'];
-			var correct_choices = [correct1, correct2, correct3, correct4, correct5, correct6, correct7];
+			var correct_choices = [correct1, correct2, correct3, correct4, correct5, correct6, correct7, correct8, correct9];
 			for (var i = 0; i < correct_choices.length; i++){
 				if (correct_choices[i] != post_choices[i]){
 					incor_questions.push('<br>' + questions[i] + '</br>');
