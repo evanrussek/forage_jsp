@@ -6,8 +6,6 @@ var instruction_pagelinks_a = ['Stimuli/forage_instructions/Slide1.JPG',
                             'Stimuli/forage_instructions/Slide5.JPG',
                             'Stimuli/forage_instructions/Slide6.JPG'];
 
-
-
 var instruction_pagelinks_b = ['Stimuli/forage_instructions/Slide7.JPG'];
 
 var instruction_pagelinks_c = ['Stimuli/forage_instructions/Slide8.JPG',
@@ -131,9 +129,9 @@ var options8 = ['Number of button presses required to travel to a new tree.',
 				'Difficulty of traveling and Tree point richness for number of the points it starts at.'];
 var correct8 = 2;
 
-var options9 = [50,
-								75,
-								100];
+var options9 = [60,
+								90,
+								120];
 var correct9 = 1;
 
 

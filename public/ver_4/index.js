@@ -68,7 +68,7 @@ function task(uid){
   // create a reference to the database
   var db = firebase.firestore();
 
-  var run_name = 'run4';
+  var run_name = 'run5';
 
   // record new date and start time
   db.collection('foragetask').doc(run_name).collection('subjects').doc(uid).set({
@@ -89,7 +89,7 @@ function task(uid){
   };
 
     // we'll vary the travel amount
-    var reward_amounts = [50, 75, 100];
+    var reward_amounts = [60, 90, 120];
     var reward_names = ['LOW', 'MEDIUM', 'HIGH'];
     var travel_names = ['EASY', 'HARD'];
     var harvest_key_seq = ['u'];
@@ -138,7 +138,7 @@ function task(uid){
             press_success_prob_harvest: .5,
             reward_noise: 2.5,
             start_reward_noise: 4,
-            time_min: .2,
+            time_min: 2.34,
             travel_key_seq:this_travel_key_seq,
             travel_prompt: this_travel_prompt,
             harvest_key_seq: harvest_key_seq,
