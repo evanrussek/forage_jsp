@@ -1,0 +1,339 @@
+---
+title: "R Notebook"
+output:
+  pdf_document: default
+  pdf: default
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+setwd("C:/Users/erussek/forage_jsp/analysis")
+#setwd("/Users/evanrussek/forage_jsp/analysis")
+rm(list = ls())
+library(tidyr)
+library(dplyr)
+library(zoo)
+library(ggplot2)
+library(ggpubr)
+library(RcppRoll)
+library(knitr)
+```
+
+```{r}
+data <- read.csv('data/run5_data.csv')
+head(data)
+data <- data %>% ungroup() %>% bind_cols(s_num = group_indices(., subjectID))
+data <- data %>% mutate(subj = factor(s_num))
+
+n_subj <- length(unique(data$s_num))
+
+
+```
+```{r}
+## clean the data
+travel_keys = data %>% ungroup() %>% select(travel_key) %>% unique()
+travel_keys # coded as hard then easy
+
+clean_subj_data <- function(subj_data, travel_keys){
+  # 
+  travel_key_easy = travel_keys$travel_key[1]
+  travel_key_hard = travel_keys$travel_key[2]
+  
+  subj_data <- subj_data %>%select(round, phase, reward_obs, reward_true, lag, exit, start_reward, n_travel_steps,
+                                    travel_key, subjectID, trial_num, s_num, correct_key) %>% group_by(trial_num) %>%
+    mutate(press_num = row_number(), round_fac = as.factor(round)) %>%
+    mutate(phase = replace(phase, phase == "Harvest", "HARVEST"))
+
+  subj_data <- subj_data %>% group_by(trial_num) %>% 
+    mutate(travel_key = replace(travel_key, travel_key == "", first(travel_key[travel_key != ""]))) %>%
+    mutate(travel_key_cond = case_when(travel_key == travel_key_hard   ~ "HARD",
+                                       travel_key == travel_key_easy  ~ "EASY")) %>%
+    filter(!is.na(travel_key_cond))
+}
+
+# clean all the data and bind
+datalist <- list()
+for (i in 1:n_subj){
+  subj_data <- data %>% filter(s_num == i)
+  subj_data <- clean_subj_data(subj_data, travel_keys)
+  subj_data <- ungroup(subj_data)
+  datalist[[i]] <- subj_data
+}
+#cdata <- do.call(rbind,datalist)
+cdata <- bind_rows(datalist)
+
+
+```
+```{r}
+subj_data <- data %>% filter(s_num == 1)
+nrow(subj_data)
+subj_data2 <- clean_subj_data(subj_data, travel_keys)
+nrow(subj_data2)
+
+```
+
+
+```{r}
+n_subj
+```
+
+
+```{r}
+# make a function to plot reward on each game... 
+plot_subj_reward_v_press <- function(subj_data){
+  
+  s_num <- subj_data$s_num[1]
+  
+  # reward plots which show the threshold... 
+  rew_plot <- ggplot(subj_data, aes(x = press_num, y = reward_obs, group = round))  +
+    #geom_rect(data = t1_data, aes(xmin = press_num - 0.5, xmax = press_num + 0.5, ymin = -Inf, ymax = Inf, fill = round)) +
+    geom_point(aes(color = phase)) + facet_grid(start_reward ~ travel_key_cond) + theme(legend.position = "none") + ylim(0,110) + ggtitle(paste("subj: ", s_num)) + ylab('reward collected') + xlab('button press number') + theme_minimal()
+
+# plot_an <- annotate_figure(plot, top = paste('subj: ', s_num))
+  plot(rew_plot)
+                             
+}
+
+for (s in 1:n_subj){
+  subj_data <- cdata %>% filter(s_num == s)
+  subj_data$round_num <- as.integer(as.character(subj_data$round))
+
+  #subj_data <- subj_data %>% group_by(travel_key_cond, n_travel_steps) %>% mutate(press_num = 1:n()) %>% ungroup()
+  plot_subj_reward_v_press(subj_data)  
+}
+
+
+```
+
+```{r}
+get_trial_exits <- function(thdata){
+    # get harvest
+  last_phase <- last(thdata$phase)
+  
+  # go through data.. if last phase was harvest, remove that round... 
+  if (last_phase == "HARVEST"){
+    last_round <- last(thdata$round)
+    # get the last reward ops...
+    last_reward_ob <- last(thdata$reward_obs[!is.na(thdata$reward_obs)])
+    
+    #if (last_reward_ob > 8){
+    thdata <- thdata %>% filter(round != last_round)
+    #}
+  }
+  
+  # now select harvest data
+  thdata <- thdata %>% filter(phase == "HARVEST", !is.na(reward_obs)) # find out why reward_true has so many .na
+  
+  ## get either last true reward observed
+  return_tbl <- thdata %>% 
+                  group_by(round) %>% 
+                      summarise(s_num = first(s_num), last_reward = last(reward_obs),
+                          trial_num = first(trial_num),
+                          start_reward = first(start_reward),
+                          travel_key_cond = first(travel_key_cond)) %>% ungroup()
+  return(return_tbl)
+}
+
+#sdata %>% group_by(trial_num) %>%
+#  do(get_trial_exits(.))
+
+exit_data <- cdata %>% group_by(s_num, trial_num) %>%
+  do(get_trial_exits(.)) %>% ungroup() %>% mutate(subj = as.factor(s_num))
+```
+
+```{r}
+exit_data <- exit_data %>% mutate(round_num = as.integer(as.character(round)))
+for (s in 1:n_subj){
+  p <- ggplot(exit_data %>% filter(s_num == s), aes(x = round_num, y = last_reward)) + geom_point() + geom_line() +
+  facet_grid(start_reward ~ travel_key_cond) + theme_minimal()  + ylim(0,100) + ylab('last reward collected') + xlab('harvest number')
+  
+  #plot(p)
+  #ggarrange(p)
+  a <- annotate_figure(p, right = "# travel steps", top = "travel step difficulty", fig.lab = paste('subj: ' , s))
+  plot(a)
+}
+```
+```{r}
+# do some aggregating over exit thresholds... 
+# just get the mean for each subject for each timepoint,
+mn_exit <- exit_data %>% group_by(s_num, start_reward, travel_key_cond) %>%
+  summarise(rep_exit_thresh = mean(last_reward), trial_num = mean(trial_num)) %>% 
+  group_by(s_num, start_reward, travel_key_cond) %>%
+  summarise(exit_thresh = mean(rep_exit_thresh), trial_num = mean(trial_num)) %>%
+  mutate(subj = as.factor(s_num)) %>% ungroup()
+
+# now just plot this for each subject -- draw lines to show easy - hard effect
+ggplot(mn_exit, aes(x = travel_key_cond, y = exit_thresh)) + geom_dotplot(binaxis = 'y', aes(fill = subj), dotsize = 1.2) + geom_line(aes(group = subj, color = subj), size = 1.2) +
+  facet_grid(.~start_reward) + theme_minimal() + labs(y = 'Mean Last Reward Collected', x = 'Travel Sequence', subtitle = '# Travel Presses') #theme(legend.position = "none")
+ggsave('reward_press2.png')
+
+
+ggplot(mn_exit, aes(x = factor(start_reward), y = exit_thresh)) +
+  geom_dotplot(binaxis = 'y', aes(fill = subj), dotsize = 1.2) + 
+  geom_line(aes(group = subj, color = subj), size = 1.2) +
+  facet_grid(.~travel_key_cond) + 
+  theme_minimal() + 
+  labs(y = 'Mean Last Reward Collected', x = 'Travel Key Condition', subtitle = '# Travel Presses') 
+
+```
+```{r}
+
+gmn_exit <- mn_exit %>% group_by(start_reward, travel_key_cond) %>% summarise(gm_thresh = mean(exit_thresh), gsd_thresh = sd(exit_thresh)/sqrt(n()))
+
+ggplot(gmn_exit, aes(x = factor(start_reward), y = gm_thresh, color = travel_key_cond)) +
+  geom_line(aes(group = travel_key_cond), size = 2) +
+  geom_errorbar(aes(ymin = gm_thresh - gsd_thresh, ymax = gm_thresh+gsd_thresh), width = .1, size = 2) + 
+geom_point(size = 4) + ylab('group mean exit threshold') + xlab('start reward') + labs(color = 'travel effort') + theme_minimal()
+
+```
+```{r}
+# should put trial number and round number into this... 
+library(optimx)
+library(lmerTest)
+exit_model <- lmer(last_reward ~ start_reward + travel_key_cond  + trial_num  + round_num + (1  + start_reward + travel_key_cond + trial_num + round_num  |subj), data = exit_data,  control = lmerControl(optimizer ="optimx",optCtrl=list(method='nlminb')))
+summary(exit_model)
+```
+```{r}
+#cdata %>% select(phase, round, reward_true, trial_num)
+
+# tally # of observations in each group...
+#cdata %>% select(trial_num, round, s_num, reward_true, phase) %>% filter(phase == 'HARVEST', s_num == 1, trial_num == 2)
+
+cdata %>% group_by(trial_num,round,s_num, phase, reward_true) %>% tally()
+
+```
+
+
+
+```{r}
+## response times...
+## a bit more sensible... 
+lag_data <- cdata %>% select(s_num, travel_key_cond, start_reward, phase, trial_num, lag, correct_key, round, trial_num, reward_true) %>% mutate(log_lag = log(lag)) %>% group_by(s_num, trial_num, round, phase) %>% slice(-1) %>% ungroup() %>% mutate(subj = as.factor(s_num))
+
+
+cdata %>% select(phase,trial_num, round, reward_true, s_num) %>% filter(s_num == 1)
+
+# for each harvest round, select the first 20
+lag_data <- lag_data %>% group_by(s_num, trial_num, round, phase) %>% mutate(press_num = row_number()) %>% filter(!(phase == 'HARVEST' & press_num > 20)) %>% ungroup()
+
+ggplot(lag_data, aes(x=lag)) + geom_histogram(binwidth = 10) + xlim(50,300) + facet_wrap( ~ s_num)
+
+#ggplot(lag_data, aes(x=log_lag))  + geom_histogram(binwidth = .01) + facet_wrap( ~ s_num)
+filt_lag <- lag_data %>% group_by(s_num) %>% filter(lag < median(lag) + 3*mad(lag),  lag > (median(log_lag) - 3*mad(lag))) %>% ungroup()
+
+
+#filt_lag <- lag_data %>% group_by(s_num) %>% filter(log_lag < (mean(log_lag) + 2*sd(log_lag)) , log_lag > (mean(log_lag) - 2*sd(log_lag))) %>% ungroup()
+
+ggplot(filt_lag, aes(x=lag)) + geom_histogram(binwidth = 10)  + facet_wrap(~s_num) + xlim(50,350)
+
+ggplot(filt_lag, aes(x=log_lag)) + geom_histogram(binwidth = .02) + facet_wrap(~s_num)
+
+
+```
+
+```{r}
+## with a run, plot the mean lag 
+round_filt_lag <- filt_lag %>% 
+  group_by(s_num, start_reward, travel_key_cond, round, phase) %>%
+  summarise(trial_num = first(trial_num), mean_lag = mean(lag), mean_log_lag = mean(log_lag)) %>% mutate(round_num = as.integer(as.character(round)))
+
+for (s in 1:n_subj){
+  # plot mean lag as a function of round number
+  p <- ggplot(round_filt_lag %>% filter(s_num == s), aes(x = round_num, y = mean_log_lag, color = phase)) + geom_point(size = 2) +facet_grid(start_reward ~ travel_key_cond) + geom_line(size = 1.2)  + xlab('harvest/travel number') + ylab('mean log lag') + ggtitle(paste('subj: ', s)) + theme_minimal()
+  plot(p)
+}
+
+```
+```{r}
+library(plotrix)
+
+cond_round_filt_lag <- round_filt_lag %>% 
+  group_by(start_reward, travel_key_cond, round_num, phase) %>%
+  summarise(mean_log_lag = median(mean_log_lag), sd_lag = std.error(mean_log_lag))
+
+p <- ggplot(cond_round_filt_lag, aes(x = round_num, y = mean_log_lag, color = phase)) + geom_point(size = 2) +facet_grid(start_reward ~ travel_key_cond) + geom_line(size = 1.2) + geom_linerange(aes(ymin = mean_log_lag - sd_lag, ymax = mean_log_lag + sd_lag)) +
+  xlab('harvest/travel number') + ylab('mean log lag') + ggtitle('group: ') +  theme_minimal()
+
+plot(p)
+```
+```{r}
+trial_filt_lag <- round_filt_lag %>% 
+  group_by(s_num, start_reward, travel_key_cond, phase) %>%
+  summarise(trial_num = first(trial_num), 
+            mean_lag = mean(mean_lag), 
+            mean_log_lag = mean(mean_log_lag)) %>% ungroup() %>% mutate(s_num = as.factor(s_num))
+
+ggplot(trial_filt_lag, 
+       aes(x = factor(start_reward), y = mean_lag, fill = s_num)) + 
+  geom_point(aes(color = s_num), size = 2)+ 
+  geom_line(aes(group = s_num, color = s_num), size = 1.2) +
+  facet_grid(phase ~ travel_key_cond) + theme_minimal() + xlab('start reward') + ylab('log lag time')
+
+ggplot(trial_filt_lag, 
+       aes(x = travel_key_cond, y = mean_lag, fill = s_num)) + 
+  geom_point(aes(color = s_num), size = 2)+ 
+  geom_line(aes(group = s_num, color = s_num), size = 1.2) +
+  facet_grid(phase ~ start_reward) + theme_minimal()
+```
+```{r}
+# should make a plot of the differences...
+group_lag <- trial_filt_lag %>% group_by(start_reward, travel_key_cond, phase) %>% summarise(gm_lag = mean(mean_lag), gml_lag = mean(mean_log_lag), gsd_lag = sd(mean_log_lag)/sqrt(n())) %>% ungroup()
+
+ggplot(group_lag, aes(x = factor(start_reward), y = gml_lag, color = travel_key_cond)) +
+  geom_ribbon(aes(ymin = gml_lag - gsd_lag, ymax = gml_lag+gsd_lag), fill = 'grey70') + #, width = .1, size = 2) + 
+    geom_line(aes(group = travel_key_cond), size = 2) + facet_wrap(~phase) + geom_point(size = 2) +xlab('start_reward') +
+  ylab('group mean log lag')#+ theme_minimal()
+  
+
+# for harvest -- just take the first X number of presses... 
+
+
+#gmn_exit <- mn_exit %>% group_by(start_reward, travel_key_cond) %>% summarise(gm_thresh = mean(exit_thresh), gsd_thresh = sd(exit_thresh)/sqrt(n()))
+
+#ggplot(gmn_exit, aes(x = factor(start_reward), y = gm_thresh, color = travel_key_cond)) +
+#  geom_line(aes(group = travel_key_cond), size = 2) +
+#  geom_errorbar(aes(ymin = gm_thresh - gsd_thresh, ymax = gm_thresh+gsd_thresh), width = .1, size = 2) + 
+#geom_point(size = 4) + ylab('group mean exit threshold') + xlab('start reward') + labs(color = 'travel effort') + theme_minimal() # look for a between subject relationship?
+```
+
+```{r}
+
+travel_lag <- round_filt_lag %>% ungroup() %>% 
+  filter(phase == "TRAVEL") %>% 
+  mutate(subj = as.factor(s_num),
+         start_reward_scale = start_reward/60) %>% 
+  mutate(travel_key_easy = case_when( 
+                            travel_key_cond == "EASY" ~ 1,
+                            TRUE ~ -1))
+                                                                                                                          
+travel_model <- lmer(mean_log_lag ~ start_reward_scale*travel_key_easy + trial_num + (start_reward_scale*travel_key_easy + trial_num| subj), data = travel_lag,  control = lmerControl(optimizer ="optimx",optCtrl=list(method='nlminb')))
+```
+
+```{r}
+travel_lag2 <- filt_lag %>% ungroup() %>% 
+  filter(phase == "TRAVEL") %>% 
+  mutate(subj = as.factor(s_num),
+         start_reward_scale = start_reward/60) %>% 
+  mutate(travel_key_easy = case_when( 
+                            travel_key_cond == "EASY" ~ 1,
+                            TRUE ~ -1))
+
+# want to do it on the press number... 
+travel_model <- lmer(log_lag ~ start_reward_scale*travel_key_easy  + (start_reward_scale*travel_key_easy  | subj), data = travel_lag2,  control = lmerControl(optimizer ="optimx",optCtrl=list(method='nlminb')))
+summary(travel_model)
+
+```
+
+```{r}
+# want to do it on the press number... 
+travel_model <- lmer(log_lag ~ start_reward_scale*travel_key_easy + round + trial_num + (start_reward_scale*travel_key_easy + round + trial_num  | subj), data = travel_lag2,  control = lmerControl(optimizer ="optimx",optCtrl=list(method='nlminb')))
+summary(travel_model)
+```
+
+```{r}
+travel_lag2
+```
+
