@@ -1,0 +1,62 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+setwd("C:/Users/erussek/forage_jsp/analysis")
+#setwd("/Users/evanrussek/forage_jsp/analysis")
+rm(list = ls())
+library(tidyr)
+library(dplyr)
+library(zoo)
+library(ggplot2)
+library(ggpubr)
+library(RcppRoll)
+library(knitr)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+```{r}
+sim_data <- read.csv("C:/Users/erussek/foraging/sim_data.csv")
+```
+
+```{r}
+head(sim_data)
+sim_data_sum <- sim_data %>% group_by(start_R, vigor_cost2) %>%
+  summarise(harvest_lag = mean(stay_lag), travel_lag = mean(leave_lag), exit_thresh = mean(reward_thresh))
+
+head(sim_data_sum)
+```
+```{r}
+# key should be the new name... so - klat
+sim_lag_data <- sim_data_sum#sim_data_sum %>% select(-exit_thresh)
+head(sim_lag_data)
+  
+sim_lag_data_long <- sim_lag_data %>% gather(phase, lag, harvest_lag, travel_lag)
+#ggplot(sim_data_sum, aes(x = start_R, y = travel_lag))
+```
+```{r}
+ggplot(sim_lag_data_long, aes(x = start_R, y = lag, color = factor(vigor_cost2))) + facet_wrap(~phase)+ geom_line(size = 1.2) #+ geom_point(size = 2) #+ theme_classic2()
+```
+```{r}
+
+ggplot(sim_data_sum, aes(x = start_R, y = exit_thresh, color = factor(vigor_cost2))) + geom_line(size = 1.2)# + geom_point(size = 2)
+  
+
+```
+
+
+
+
+
+
+

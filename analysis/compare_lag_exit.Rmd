@@ -1,0 +1,54 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+setwd("C:/Users/erussek/forage_jsp/analysis")
+#setwd("/Users/evanrussek/forage_jsp/analysis")
+rm(list = ls())
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(ggpubr)
+library(knitr)
+```
+
+```{r}
+source("round_5_funcs.R")
+```
+
+```{r}
+cdata <- get_cdata()
+exit_data <- get_exit_data(cdata)
+```
+
+```{r}
+# exit data accross trials (conditions) x subject
+trial_exit <- exit_data %>% group_by(s_num, start_reward, travel_key_cond) %>%
+  summarise(rep_exit_thresh = mean(last_reward), trial_num = mean(trial_num)) %>% 
+  group_by(s_num, start_reward, travel_key_cond) %>%
+  summarise(exit_thresh = mean(rep_exit_thresh), trial_num = mean(trial_num)) %>% ungroup() %>%
+  mutate(subj = as.factor(s_num))
+```
+
+
+```{r}
+key_eff_df <- trial_exit %>% droplevels() %>% complete(s_num, start_reward, travel_key_cond) %>% group_by(s_num,start_reward) %>%
+  summarize(key_thresh_diff = exit_thresh[travel_key_cond == "HARD"] - exit_thresh[travel_key_cond == "EASY"],
+            key_thresh_pct_diff = exit_thresh[travel_key_cond == "HARD"]/ exit_thresh[travel_key_cond == "EASY"])
+
+key_eff_df
+```
+
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.

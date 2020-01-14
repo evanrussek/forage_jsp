@@ -1,0 +1,113 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+setwd("C:/Users/erussek/forage_jsp/analysis")
+#setwd("/Users/evanrussek/forage_jsp/analysis")
+## load in libraries... 
+rm(list = ls())
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(brms)
+```
+
+```{r}
+source("round_5_funcs.R")
+```
+
+```{r}
+cdata <- get_cdata()
+#cdata
+```
+
+```{r}
+# lag data # maximal
+lag_data <- make_filt_lag(cdata, 100, 100)
+lag_data$start_reward_scale = scale(lag_data$start_reward)
+lag_data %>% select(phase, round, press_num) %>% head()
+
+```
+
+
+```{r}
+lag_data <- lag_data %>% 
+  ungroup() %>%
+  mutate(subj = as.factor(s_num),
+         harvest_easy = 1*(phase == "HARVEST" & travel_key_cond == "EASY"),
+         harvest_hard = 1*(phase == "HARVEST" & travel_key_cond == "HARD"),
+         travel_easy = 1*(phase == "TRAVEL" & travel_key_cond == "EASY"),
+         travel_hard = 1*(phase == "TRAVEL" & travel_key_cond == "HARD"))
+
+#lag_data <- lag_data %>% group_by(subj, trial_num, phase, round) %>%
+#  mutate(press_num = row_number()) %>% ungroup()
+
+lag_data
+```
+
+```{r}
+# want a crazy model where round num, press_num, trial_num can differ by difficulty and phase... (3 types of presses - so maybe just do these types of presses... )  
+lag1_brm_lognormal <- brm(lag ~ -1 + 
+                  start_reward_scale*(harvest_easy + harvest_hard +
+                                        travel_easy + travel_hard)
+                -start_reward_scale + 
+      round + trial_num + press_num +
+      (-1 + 
+         start_reward_scale*(harvest_easy + harvest_hard + travel_easy + travel_hard) 
+       -start_reward_scale + 
+         round + trial_num + press_num| subj),
+      cores = 4,
+      data = lag_data,
+      family = lognormal()
+      )
+```
+```{r}
+save(lag1_brm_lognormal, file = 'lag1_brm_lognormal')
+```
+
+```{r}
+lag_draws <-  as.data.frame(lag1_brm_lognormal) #%>% select(b_start_reward_scale, )
+head(lag_draws)
+
+# compute contrasts... 
+lag_draws <- lag_draws %>% mutate(b_diff = .5*b_hard - .5*b_easy, 
+                       b_diff_r_int = 1*b_hard.start_reward_scale - 1*b_easy.start_reward_scale,
+                       b_r = .5*b_easy.start_reward_scale + .5*b_hard.start_reward_scale)
+key_draws2 <- exit2_draws %>% 
+  select(b_diff, b_diff_r_int,b_r, b_round_num, b_trial_num) %>% 
+  gather(var_name, value)
+#head(key_draws) %>% gather(var_name, value)
+#summary(exit2_brm)
+
+# plot posterior samples for the key variables of interest
+ggplot(key_draws2,
+       aes(x = value, fill = var_name)) + geom_histogram(binwidth = .1) + ggtitle('exit 2 model') + facet_wrap(~var_name)
+```
+
+
+
+```{r}
+
+lag_draws <-  as.data.frame(lag1_brm_lognormal) #%>% select(b_start_reward_scale, )
+head(lag_draws)
+
+key_draws <- lag_draws %>% select(b_harvest_easy, b_harvest_hard) %>% gather(var_name, value)
+
+ggplot(key_draws,
+       aes(x = value, fill = var_name)) + geom_histogram(binwidth = .00) + ggtitle('lag model') #+ facet_wrap(~var_name)
+       
+```
+
+
+```{r}
+launch_shinystan(lag1_brm_lognormal)
+```
+
+
+

@@ -175,7 +175,7 @@ gmn_exit <- mn_exit %>% group_by(start_reward, travel_key_cond) %>% summarise(gm
 ggplot(gmn_exit, aes(x = factor(start_reward), y = gm_thresh, color = travel_key_cond)) +
   geom_line(aes(group = travel_key_cond), size = 2) +
   geom_errorbar(aes(ymin = gm_thresh - gsd_thresh, ymax = gm_thresh+gsd_thresh), width = .1, size = 2) + 
-geom_point(size = 4) + ylab('group mean exit threshold') + xlab('start reward') + labs(color = 'travel effort') + theme_minimal()
+geom_point(size = 4) + ylab('group mean exit threshold') + xlab('start reward') + labs(color = 'travel effort')
 
 ```
 

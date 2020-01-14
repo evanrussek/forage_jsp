@@ -1,0 +1,126 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+setwd("C:/Users/erussek/forage_jsp/analysis")
+#setwd("/Users/evanrussek/forage_jsp/analysis")
+## load in libraries... 
+rm(list = ls())
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(brms)
+```
+
+```{r}
+source("round_5_funcs.R")
+```
+
+```{r}
+cdata <- get_cdata()
+```
+
+```{r}
+# exit data for each round... 
+exit_data <- get_exit_data(cdata)
+exit_data$start_reward_scale = scale(exit_data$start_reward)
+```
+
+```{r}
+head(exit_data)
+```
+
+```{r}
+exit1_brm <- brm(last_reward ~ start_reward_scale*travel_key_cond + 
+      round_num + trial_num +
+      (1 + start_reward_scale*travel_key_cond + 
+         round_num + trial_num| subj),
+      cores = 4,
+      data = exit_data
+      )
+```
+```{r}
+save(exit1_brm, file = 'exit1_brm')
+```
+
+```{r}
+exit1_draws <-  as.data.frame(exit1_brm) #%>% select(b_start_reward_scale, )
+#head(exit1_draws)
+key_draws <- exit1_draws %>% 
+  select(b_start_reward_scale, b_travel_key_condHARD,b_start_reward_scale.travel_key_condHARD) %>% 
+  gather(var_name, value)
+#head(key_draws) %>% gather(var_name, value)
+
+```
+
+```{r}
+# plot posterior samples for the key variables of interest
+ggplot(key_draws, aes(x = value, fill = var_name)) + geom_histogram(binwidth = .1) + ggtitle('exit 1 model')
+```
+
+
+```{r}
+# compute 'p' values
+exit_1_pvals <- key_draws %>% group_by(var_name) %>% 
+  summarize(prop_pos = mean(value > 0), 
+            prop_neg = mean(value < 0))
+exit_1_pvals
+
+```
+
+```{r}
+# exit model 2 - split up the data up btw. hard and easy conditions...
+exit_data <- exit_data %>% ungroup() %>%
+    mutate(easy = 1*(travel_key_cond == "EASY"),
+           hard = 1*(travel_key_cond == "HARD"))
+
+#
+exit2_brm <- brm(last_reward ~ -1 + start_reward_scale*(easy + hard) -start_reward_scale + 
+      round_num + trial_num + 
+      (-1 + start_reward_scale*(easy + hard) -start_reward_scale + 
+         round_num + trial_num| subj),
+      cores = 4,
+      data = exit_data
+      )
+
+```
+```{r}
+save(exit2_brm, file = 'exit2_brm')
+```
+
+
+```{r}
+exit2_draws <-  as.data.frame(exit2_brm) #%>% select(b_start_reward_scale, )
+#head(exit2_draws)
+
+# compute contrasts... 
+exit2_draws <- exit2_draws %>% mutate(b_diff = .5*b_hard - .5*b_easy, 
+                       b_diff_r_int = 1*b_hard.start_reward_scale - 1*b_easy.start_reward_scale,
+                       b_r = .5*b_easy.start_reward_scale + .5*b_hard.start_reward_scale)
+key_draws2 <- exit2_draws %>% 
+  select(b_diff, b_diff_r_int,b_r) %>% 
+  gather(var_name, value)
+#head(key_draws) %>% gather(var_name, value)
+#summary(exit2_brm)
+```
+
+```{r}
+# plot posterior samples for the key variables of interest
+ggplot(key_draws2, aes(x = value, fill = var_name)) + geom_histogram(binwidth = .1) + ggtitle('exit 2 model')
+```
+```{r}
+exit_2_pvals <- key_draws2 %>% group_by(var_name) %>% 
+  summarize(prop_pos = mean(value > 0), 
+            prop_neg = mean(value < 0))
+exit_2_pvals
+```
+
+
+
+

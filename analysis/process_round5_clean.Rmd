@@ -1,0 +1,323 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+setwd("C:/Users/erussek/forage_jsp/analysis")
+#setwd("/Users/evanrussek/forage_jsp/analysis")
+rm(list = ls())
+library(tidyr)
+library(dplyr)
+library(zoo)
+library(ggplot2)
+library(ggpubr)
+library(RcppRoll)
+library(knitr)
+```
+
+```{r}
+data <- read.csv('data/run5_data.csv')
+#head(data)
+data <- data %>% ungroup() %>% bind_cols(s_num = group_indices(., subjectID))
+data <- data %>% mutate(subj = factor(s_num))
+
+n_subj <- length(unique(data$s_num))
+
+```
+
+```{r, echo=TRUE,results='hide', warning = 'hide'}
+## clean the data
+travel_keys = data %>% ungroup() %>% select(travel_key) %>% unique()
+travel_keys # coded as easy then hard
+
+clean_subj_data <- function(subj_data, travel_keys){
+  # 
+  travel_key_easy = travel_keys$travel_key[1]
+  travel_key_hard = travel_keys$travel_key[2]
+  
+  subj_data <- subj_data %>%select(round, phase, reward_obs, reward_true, lag, exit, start_reward, n_travel_steps,
+                                    travel_key, subjectID, trial_num, s_num, correct_key) %>% group_by(trial_num) %>%
+    mutate(press_num = row_number()) %>% ungroup() %>%
+    mutate(phase = replace(phase, phase == "Harvest", "HARVEST"))
+
+  subj_data <- subj_data %>% group_by(trial_num) %>% 
+    mutate(travel_key = replace(travel_key, travel_key == "", first(travel_key[travel_key != ""]))) %>%
+    mutate(travel_key_cond = case_when(travel_key == travel_key_hard   ~ "HARD",
+                                       travel_key == travel_key_easy  ~ "EASY")) %>%
+    filter(!is.na(travel_key_cond))
+}
+
+# clean all the data and bind
+datalist <- list()
+for (i in 1:n_subj){
+  subj_data <- data %>% filter(s_num == i)
+  subj_data <- clean_subj_data(subj_data, travel_keys)
+  subj_data <- ungroup(subj_data)
+  datalist[[i]] <- subj_data
+}
+#cdata <- do.call(rbind,datalist)
+cdata <- bind_rows(datalist)
+
+```
+```{r}
+# compute exit thresholds
+get_trial_exits <- function(thdata){
+    # get harvest
+  last_phase <- last(thdata$phase)
+  
+  # go through data.. if last phase was harvest, remove that round... 
+  if (last_phase == "HARVEST"){
+    last_round <- last(thdata$round)
+    # get the last reward ops...
+    last_reward_ob <- last(thdata$reward_obs[!is.na(thdata$reward_obs)])
+    
+    #if (last_reward_ob > 8){
+    thdata <- thdata %>% filter(round != last_round)
+    #}
+  }
+  
+  # now select harvest data
+  thdata <- thdata %>% filter(phase == "HARVEST", !is.na(reward_obs)) # find out why reward_true has so many .na
+  
+  ## get either last true reward observed
+  return_tbl <- thdata %>% 
+                  group_by(round) %>% 
+                      summarise(s_num = first(s_num), last_reward = last(reward_obs),
+                          trial_num = first(trial_num),
+                          start_reward = first(start_reward),
+                          travel_key_cond = first(travel_key_cond)) %>% ungroup()
+  return(return_tbl)
+}
+
+#sdata %>% group_by(trial_num) %>%
+#  do(get_trial_exits(.))
+
+# exit data accross rounds
+exit_data <- cdata %>% group_by(s_num, trial_num) %>%
+  do(get_trial_exits(.)) %>% ungroup() %>% mutate(subj = as.factor(s_num), round_num = as.integer(as.character(round)))
+
+# exit data accross trials (conditions) x subject
+mn_exit <- exit_data %>% group_by(s_num, start_reward, travel_key_cond) %>%
+  summarise(rep_exit_thresh = mean(last_reward), trial_num = mean(trial_num)) %>% 
+  group_by(s_num, start_reward, travel_key_cond) %>%
+  summarise(exit_thresh = mean(rep_exit_thresh), trial_num = mean(trial_num)) %>% ungroup() %>%
+  mutate(subj = as.factor(s_num))
+
+# exit data across group means
+gmn_exit <- mn_exit %>% group_by(start_reward, travel_key_cond) %>% summarise(gm_thresh = mean(exit_thresh), gsd_thresh = sd(exit_thresh)/sqrt(n()))
+
+```
+
+```{r}
+# plot the group mean exit data... 
+ggplot(gmn_exit, aes(x = factor(start_reward), y = gm_thresh, color = travel_key_cond)) +
+  geom_line(aes(group = travel_key_cond), size = 2) +
+  geom_errorbar(aes(ymin = gm_thresh - gsd_thresh, ymax = gm_thresh+gsd_thresh), width = .1, size = 2) + 
+geom_point(size = 4) + ylab('group mean exit threshold') + xlab('start reward') + labs(color = 'travel effort') + theme_minimal()
+```
+
+
+```{r}
+## plot the within subject differences... 
+# key condition effect
+
+key_eff_df <- mn_exit %>% droplevels() %>% complete(s_num, start_reward, travel_key_cond) %>% group_by(s_num,start_reward) %>%
+  summarize(key_thresh_diff = exit_thresh[travel_key_cond == "HARD"] - exit_thresh[travel_key_cond == "EASY"])
+
+ggplot(key_eff_df, aes(x = factor(start_reward), y = key_thresh_diff, fill = factor(start_reward))) +  geom_bar(stat = "summary", fun.y = "mean", position = position_dodge(width = 1), width = .5) +
+  geom_dotplot(binaxis = "y", stackdir = "up", dotsize = .6, position = position_dodge(width = 1)) +
+  geom_hline(yintercept = 0) #+ theme_classic()
+
+```
+
+```{r}
+# within subject reward difference effect on exit thresholds... 
+rew_eff_df <- mn_exit %>% droplevels() %>% complete(s_num, travel_key_cond, start_reward) %>% group_by(s_num,travel_key_cond) %>%
+  summarize(rew_thresh_diff1 = exit_thresh[start_reward == 60] - exit_thresh[start_reward == 90],
+            rew_thresh_diff2 = exit_thresh[start_reward == 90] - exit_thresh[start_reward == 120],
+            rew_thresh_diff3 = exit_thresh[start_reward == 60] - exit_thresh[start_reward == 120])
+
+
+ggplot(rew_eff_df, aes(x = factor(travel_key_cond), y = rew_thresh_diff3, fill = travel_key_cond)) +
+   geom_bar(stat = "summary", fun.y = "mean", position = position_dodge(width = 1), width = .5) + 
+  geom_dotplot(binaxis = "y", stackdir = "up", dotsize = .75, position = position_dodge(1)) +
+  geom_hline(yintercept = 0)  + ylab('exit thresh difference (120 - 60)')
+
+```
+```{r}
+# reaction times... 
+# make a function which says how many rounds to use... how many button preses
+make_filt_lag <- function(cdata, press_thresh, round_thresh){
+  
+  lag_data <- cdata %>% droplevels() %>%
+    select(s_num, travel_key_cond, start_reward, phase, trial_num, lag, correct_key, round, trial_num, reward_true) %>% 
+    mutate(log_lag = log(lag)) %>% group_by(s_num, trial_num, round, phase) %>% 
+    slice(-1) %>% ungroup() %>% 
+    mutate(subj = as.factor(s_num))
+  
+  # for each harvest round, select the first 20
+  lag_data <- lag_data %>% group_by(s_num, trial_num, round, phase) %>% 
+    mutate(press_num = row_number()) %>% 
+    filter(press_num < press_thresh & round < round_thresh ) %>% 
+    ungroup()
+  
+  ### change how we do filtering... 
+  filt_lag <- lag_data %>% group_by(s_num) %>% 
+    filter(lag < median(lag) + 3*mad(lag),  lag > (median(lag) - 3*mad(lag))) %>% ungroup() %>%
+    mutate(ll_scale = scale(log_lag))
+  
+  return(filt_lag)
+
+}
+
+make_round_filt_lag <- function(cdata, press_thresh, round_thresh){
+  filt_lag <- make_filt_lag(cdata,press_thresh,round_thresh)
+  round_filt_lag <- filt_lag %>% ungroup() %>%
+  group_by(s_num, start_reward, travel_key_cond, round, phase) %>%
+    summarise(trial_num = first(trial_num), mean_lag = mean(lag),
+              mean_log_lag = mean(log_lag), 
+              mll_scale = mean(ll_scale)) %>%
+    mutate(round_num = as.integer(as.character(round))) %>% 
+    ungroup() %>%
+    mutate(subj = factor(s_num))
+  return(round_filt_lag)
+}
+
+make_trial_filt_lag <- function(cdata, press_thresh, round_thresh){
+  round_filt_lag <- make_round_filt_lag(cdata,press_thresh,round_thresh)
+  
+  trial_filt_lag <- round_filt_lag %>% ungroup() %>% droplevels() %>% complete(s_num, start_reward, travel_key_cond, phase) %>%
+  group_by(s_num, start_reward, travel_key_cond, phase) %>%
+  summarise(trial_num = first(trial_num), 
+            mean_lag = mean(mean_lag), 
+            mean_log_lag = mean(mean_log_lag),
+            mll_scale = mean(mll_scale)) %>% ungroup() %>% mutate(subj = as.factor(s_num))
+}
+
+filt_lag_1r <- make_trial_filt_lag(cdata,100,100)
+#filt_lag_ar <- make_trial_filt_lag(cdata,100,100)
+
+```
+
+```{r }
+# plot the group average for different ways of doing this.
+plot_group_lag <- function(trial_filt_lag){
+  
+  group_lag <- trial_filt_lag %>% group_by(start_reward, travel_key_cond, phase) %>% summarise(gm_lag = mean(mean_lag), gml_lag = mean(mean_lag, na.rm = TRUE), gsd_lag = sd(mean_lag, na.rm = TRUE)/sqrt(n())) %>% ungroup()
+  
+  group_plot <- ggplot(group_lag, 
+         aes(x = factor(start_reward), y = gml_lag, color = travel_key_cond)) +
+    geom_ribbon(aes(ymin = gml_lag - gsd_lag, ymax = gml_lag+gsd_lag),
+                fill = 'grey70') + #, width = .1, size = 2) + 
+    geom_line(aes(group = travel_key_cond), size = 2) + 
+    facet_wrap(~phase) + geom_point(size = 2) +
+    xlab('start_reward') +
+    ylab('group mean log lag')
+  
+  print(group_plot)
+}
+
+trial_filt_lag_ar <- make_trial_filt_lag(cdata,100,100)
+plot_group_lag(trial_filt_lag_ar)
+
+```
+```{r}
+#trial_filt_lag_ar <- make_trial_filt_lag(cdata,100,100)
+#plot_group_lag(trial_filt_lag_ar)
+trial_filt_lag_1r <- make_trial_filt_lag(cdata,10,2)
+plot_group_lag(trial_filt_lag_1r)
+```
+```{r}
+head(trial_filt_lag_1r)
+```
+
+
+
+```{r}
+plot_subj_rew_lag <- function(trial_filt_lag){
+  rew_eff_df <- trial_filt_lag %>% droplevels() %>% 
+    complete(s_num, travel_key_cond, start_reward, phase) %>%
+    group_by(s_num,travel_key_cond,phase) %>%
+  summarize(rew_log_diff1 = mean_log_lag[start_reward == 60] - mean_log_lag[start_reward == 90],
+            
+            rew_log_diff2 = mean_log_lag[start_reward == 90] - mean_log_lag[start_reward == 120],
+            rew_log_diff3 = mean_log_lag[start_reward == 60] - mean_log_lag[start_reward == 120])
+
+
+  rew_ef_plot <- ggplot(rew_eff_df, 
+         aes(x = phase, y = rew_log_diff3, fill = travel_key_cond)) +
+    geom_bar(stat = "summary", fun.y = "mean", 
+              position = position_dodge(width = 1), width = .5) +
+    geom_dotplot(binaxis = "y", stackdir = "up", dotsize = .75,
+                 position = position_dodge(1)) +
+    geom_hline(yintercept = 0)+
+    ylab('sd log reaction time difference')
+  
+  print(rew_ef_plot)
+}
+
+plot_subj_key_lag <- function(trial_filt_lag){
+  
+  key_eff_df <- trial_filt_lag %>% droplevels() %>% 
+    complete(s_num, start_reward, travel_key_cond, phase) %>% 
+    group_by(s_num,start_reward,phase) %>%
+    summarize(
+      key_log_diff = mll_scale[travel_key_cond == "HARD"] - mll_scale[travel_key_cond == "EASY"])
+  
+  key_ef_plot <- ggplot(key_eff_df, 
+         aes(x = phase, y = key_log_diff, fill = factor(start_reward))) +  
+    geom_bar(stat = "summary", fun.y = "mean", position = position_dodge(width = 1), width = .5) +
+    geom_dotplot(binaxis = "y", stackdir = "up", dotsize = .6, position = position_dodge(width = 1)) +
+    geom_hline(yintercept = 0) #+ theme_classic()
+  
+  print(key_ef_plot)
+}
+
+```
+
+```{r}
+trial_filt_lag_1r <- make_trial_filt_lag(cdata,100,100)
+plot_subj_rew_lag(trial_filt_lag_1r)
+plot_subj_key_lag(trial_filt_lag_1r)
+
+```
+
+```{r}
+
+# compare the key difference
+exit_rew_eff_df <- rew_eff_df # want to change it to percent difference as well... 
+trial_filt_lag <- make_trial_filt_lag(cdata,100,100)
+
+lag_rew_eff_df <- trial_filt_lag %>% droplevels() %>% 
+    complete(s_num, travel_key_cond, start_reward, phase) %>%
+    group_by(s_num,travel_key_cond,phase) %>%
+    summarize(rew_log_diff1 = mean_log_lag[start_reward == 60] - mean_log_lag[start_reward == 90],
+            rew_log_diff2 = mean_log_lag[start_reward == 90] - mean_log_lag[start_reward == 120],
+            rew_log_diff3 = mean_log_lag[start_reward == 60] - mean_log_lag[start_reward == 120])
+
+
+
+```
+
+```{r}
+full_rew_df <- full_join(exit_rew_eff_df, lag_rew_eff_df)
+```
+```{r}
+head(full_rew_df)
+```
+```{r}
+ggplot(full_rew_df, aes(x = rew_thresh_diff3, y = rew_log_diff3, color = travel_key_cond)) + facet_grid(travel_key_cond ~ phase) +
+  geom_point() + geom_smooth(method = 'lm', se = TRUE)
+  
+```
+```{r}
+exit_rew_df
+```
+
+
+
