@@ -10,8 +10,8 @@ This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute
 Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
 
 ```{r}
-setwd("C:/Users/erussek/forage_jsp/analysis")
-#setwd("/Users/evanrussek/forage_jsp/analysis")
+#setwd("C:/Users/erussek/forage_jsp/analysis")
+setwd("/Users/evanrussek/forage_jsp/analysis")
 rm(list = ls())
 library(tidyr)
 library(dplyr)
@@ -338,8 +338,8 @@ ggplot(rew_eff_df, aes(x = phase, y = rew_log_diff3, fill = travel_key_cond)) +
 
 group_lag <- trial_filt_lag %>% group_by(start_reward, travel_key_cond, phase) %>% summarise(gm_lag = mean(mean_lag), gml_lag = mean(mll_scale), gsd_lag = sd(mll_scale)/sqrt(n())) %>% ungroup()
 
-ggplot(group_lag, aes(x = factor(start_reward), y = gml_lag, color = travel_key_cond)) +
-  geom_ribbon(aes(ymin = gml_lag - gsd_lag, ymax = gml_lag+gsd_lag), fill = 'grey70') + #, width = .1, size = 2) + 
+ggplot(group_lag, aes(x = factor(start_reward), y = gm_lag, color = travel_key_cond)) +
+  geom_ribbon(aes(ymin = gm_lag - gsd_lag, ymaax = gml_lag+gsd_lag), fill = 'grey70') + #, width = .1, size = 2) + 
     geom_line(aes(group = travel_key_cond), size = 2) + facet_wrap(~phase) + geom_point(size = 2) +xlab('start_reward') +
   ylab('group mean log lag')
 
@@ -436,6 +436,9 @@ harvest_keyp_con <- c(.5,-.5, 0,0,0,0,0,0,0)
 harvest_keyp_eff <- esticon(split_press_model,harvest_keyp_con)
 harvest_keyp_eff
 ```
+```{r}
+bic(travel_model)
+```
 
 ```{r}
 harvest_keyp_con <- c(0,0,0,0,0,.25,.25,.25,.25)
@@ -466,4 +469,12 @@ travel_model <- lmer(log_lag ~ start_reward_scale*travel_key_easy + round + tria
 summary(travel_model)
 ```
 
+<<<<<<< Updated upstream
+=======
+```{r}
+
+# they have diff numbers of rounds/
+
+```
+>>>>>>> Stashed changes
 
