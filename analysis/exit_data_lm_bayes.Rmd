@@ -8,8 +8,8 @@ This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute
 Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
 
 ```{r}
-setwd("C:/Users/erussek/forage_jsp/analysis")
-#setwd("/Users/evanrussek/forage_jsp/analysis")
+#setwd("C:/Users/erussek/forage_jsp/analysis")
+setwd("/Users/evanrussek/forage_jsp/analysis")
 ## load in libraries... 
 rm(list = ls())
 library(tidyr)
@@ -37,24 +37,27 @@ head(exit_data)
 ```
 
 ```{r}
-exit1_brm <- brm(last_reward ~ start_reward_scale*travel_key_cond + 
-      round_num + trial_num +
-      (1 + start_reward_scale*travel_key_cond + 
-         round_num + trial_num| subj),
-      cores = 4,
-      data = exit_data
-      )
+#exit1_brm <- brm(last_reward ~ start_reward_scale*travel_key_cond + 
+#      round_num + trial_num +
+#      (1 + start_reward_scale*travel_key_cond + 
+#         round_num + trial_num| subj),
+#      cores = 4,
+#      data = exit_data
+#      )
+#save(exit1_brm, file = 'exit1_brm')
+
 ```
 ```{r}
-save(exit1_brm, file = 'exit1_brm')
+#save(exit1_brm, file = 'exit1_brm')
+load(file = 'exit1_brm')
 ```
 
 ```{r}
 exit1_draws <-  as.data.frame(exit1_brm) #%>% select(b_start_reward_scale, )
-#head(exit1_draws)
-key_draws <- exit1_draws %>% 
-  select(b_start_reward_scale, b_travel_key_condHARD,b_start_reward_scale.travel_key_condHARD) %>% 
-  gather(var_name, value)
+head(exit1_draws)
+#key_draws <- exit1_draws %>% 
+#  select(b_start_reward_scale, b_travel_key_condHARD,b_start_reward_scale.travel_key_condHARD) %>% 
+#  gather(var_name, value)
 #head(key_draws) %>% gather(var_name, value)
 
 ```

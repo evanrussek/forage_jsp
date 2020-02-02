@@ -1,4 +1,4 @@
-setwd("C:/Users/erussek/forage_jsp/analysis")
+#setwd("C:/Users/erussek/forage_jsp/analysis")
 #setwd("/Users/evanrussek/forage_jsp/analysis")
 ## load in libraries... 
 rm(list = ls())
@@ -116,6 +116,29 @@ make_filt_lag <- function(cdata, press_thresh, round_thresh){
   
 }
 
+make_filt_lag_sr <- function(cdata, press_thresh, round_num){
+  
+  lag_data <- cdata %>% droplevels() %>%
+    select(s_num, travel_key_cond, start_reward, phase, trial_num, lag, correct_key, round, trial_num, reward_true) %>% 
+    mutate(log_lag = log(lag)) %>% group_by(s_num, trial_num, round, phase) %>% 
+    slice(-1) %>% ungroup() %>% 
+    mutate(subj = as.factor(s_num))
+  
+  # for each harvest round, select the first 20
+  lag_data <- lag_data %>% group_by(s_num, trial_num, round, phase) %>% 
+    mutate(press_num = row_number()) %>% 
+    filter(press_num < press_thresh & round == round_num ) %>% 
+    ungroup()
+  
+  ### change how we do filtering... 
+  filt_lag <- lag_data %>% group_by(s_num) %>% 
+    filter(lag < median(lag) + 3*mad(lag),  lag > (median(lag) - 3*mad(lag))) %>% ungroup() %>%
+    mutate(ll_scale = scale(log_lag))
+  
+  return(filt_lag)
+  
+}
+
 make_round_filt_lag <- function(cdata, press_thresh, round_thresh){
   filt_lag <- make_filt_lag(cdata,press_thresh,round_thresh)
   round_filt_lag <- filt_lag %>% ungroup() %>%
@@ -129,6 +152,30 @@ make_round_filt_lag <- function(cdata, press_thresh, round_thresh){
   return(round_filt_lag)
 }
 
+make_single_round_filt_lag <- function(cdata, press_thresh, round_num){
+  filt_lag <- make_filt_lag_sr(cdata,press_thresh,round_num)
+  round_filt_lag <- filt_lag %>% ungroup() %>%
+    group_by(s_num, start_reward, travel_key_cond, round, phase) %>%
+    summarise(trial_num = first(trial_num), mean_lag = mean(lag),
+              mean_log_lag = mean(log_lag), 
+              mll_scale = mean(ll_scale)) %>%
+    mutate(round_num = as.integer(as.character(round))) %>% 
+    ungroup() %>%
+    mutate(subj = factor(s_num))
+  return(round_filt_lag)
+}
+
+make_trial_filt_lag2 <- function(cdata, press_thresh, round_num){
+  round_filt_lag <- make_single_round_filt_lag(cdata,press_thresh,round_num)
+  
+  trial_filt_lag <- round_filt_lag %>% ungroup() %>% droplevels() %>% complete(s_num, start_reward, travel_key_cond, phase) %>%
+    group_by(s_num, start_reward, travel_key_cond, phase) %>%
+    summarise(trial_num = first(trial_num), 
+              mean_lag = mean(mean_lag), 
+              mean_log_lag = mean(mean_log_lag),
+              mll_scale = mean(mll_scale)) %>% ungroup() %>% mutate(subj = as.factor(s_num))
+}
+
 make_trial_filt_lag <- function(cdata, press_thresh, round_thresh){
   round_filt_lag <- make_round_filt_lag(cdata,press_thresh,round_thresh)
   
@@ -139,3 +186,5 @@ make_trial_filt_lag <- function(cdata, press_thresh, round_thresh){
               mean_log_lag = mean(mean_log_lag),
               mll_scale = mean(mll_scale)) %>% ungroup() %>% mutate(subj = as.factor(s_num))
 }
+  
+  

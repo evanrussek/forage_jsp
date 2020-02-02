@@ -8,10 +8,10 @@ This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute
 Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
 
 ```{r}
-setwd("C:/Users/erussek/forage_jsp/analysis")
-#setwd("/Users/evanrussek/forage_jsp/analysis")
+#setwd("C:/Users/erussek/forage_jsp/analysis")
+setwd("/Users/evanrussek/forage_jsp/analysis")
 ## load in libraries... 
-rm(list = ls())
+#rm(list = ls())
 library(tidyr)
 library(dplyr)
 library(ggplot2)
@@ -53,22 +53,26 @@ lag_data
 
 ```{r}
 # want a crazy model where round num, press_num, trial_num can differ by difficulty and phase... (3 types of presses - so maybe just do these types of presses... )  
-lag1_brm_lognormal <- brm(lag ~ -1 + 
-                  start_reward_scale*(harvest_easy + harvest_hard +
-                                        travel_easy + travel_hard)
-                -start_reward_scale + 
-      round + trial_num + press_num +
-      (-1 + 
-         start_reward_scale*(harvest_easy + harvest_hard + travel_easy + travel_hard) 
-       -start_reward_scale + 
-         round + trial_num + press_num| subj),
-      cores = 4,
-      data = lag_data,
-      family = lognormal()
-      )
+# lag1_brm_lognormal <- brm(lag ~ -1 + 
+#                   start_reward_scale*(harvest_easy + harvest_hard +
+#                                         travel_easy + travel_hard)
+#                 -start_reward_scale + 
+#       round + trial_num + press_num +
+#       (-1 + 
+#          start_reward_scale*(harvest_easy + harvest_hard + travel_easy + travel_hard) 
+#        -start_reward_scale + 
+#          round + trial_num + press_num| subj),
+#       cores = 4,
+#       data = lag_data,
+#       family = lognormal()
+#       )
+# 
+# save(lag1_brm_lognormal, file = 'lag1_brm_lognormal')
+
 ```
 ```{r}
-save(lag1_brm_lognormal, file = 'lag1_brm_lognormal')
+load(file = "lag1_brm_lognormal")
+
 ```
 
 ```{r}

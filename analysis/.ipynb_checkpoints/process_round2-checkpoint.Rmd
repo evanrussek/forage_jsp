@@ -1,0 +1,76 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+setwd("/Users/evanrussek/forage_jsp/analysis")
+#setwd("C:/Users/erussek/forage_jsp/analysis")
+rm(list = ls())
+library(tidyr)
+library(dplyr)
+library(zoo)
+library(ggplot2)
+library(ggpubr)
+library(RcppRoll)
+library(knitr)
+```
+
+```{r}
+source("plot_funcs.R")
+```
+
+```{r}
+data <- read.csv('data/run2_data.csv')
+#head(data)
+data <- data %>% ungroup() %>% bind_cols(s_num = group_indices(., subjectID))
+data <- data %>% mutate(subj = factor(s_num))
+data %>% filter(s_num == 1)
+```
+```{r}
+# clean all the data and bind
+source("plot_funcs.R")
+
+datalist <- list()
+for (i in 1:10){
+  subj_data <- data %>% filter(s_num == i)
+  subj_data <- clean_subj_data2(subj_data)
+  subj_data <- ungroup(subj_data)
+  datalist[[i]] <- subj_data
+}
+#cdata <- do.call(rbind,datalist)
+cdata <- bind_rows(datalist)
+head(cdata)
+```
+```{r}
+source("plot_funcs.R")
+
+# plot reward vs press number for each subject
+for (s in 1:10){
+  subj_data <- cdata %>% filter(s_num == s)
+  plot_subj_reward_v_press2(subj_data)  
+}
+```
+
+```{r}
+  # all the RTs from this trial... 
+rep_1_lag = ggplot(subj_data, aes(x = press_num, y = reward_true, group = round))  +
+    #geom_rect(data = t1_data, aes(xmin = press_num - 0.5, xmax = press_num + 0.5, ymin = -Inf, ymax = Inf, fill = round)) +
+    geom_point(aes(color = phase)) + facet_grid(n_travel_steps ~ travel_key_cond) + theme(legend.position = "none") #ylim(0,350)
+plot(rep_1_lag)
+
+```
+
+
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+

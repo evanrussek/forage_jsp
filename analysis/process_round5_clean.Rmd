@@ -8,9 +8,9 @@ This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute
 Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
 
 ```{r}
-setwd("C:/Users/erussek/forage_jsp/analysis")
-#setwd("/Users/evanrussek/forage_jsp/analysis")
-rm(list = ls())
+#setwd("C:/Users/erussek/forage_jsp/analysis")
+setwd("/Users/evanrussek/forage_jsp/analysis")
+#rm(list = ls())
 library(tidyr)
 library(dplyr)
 library(zoo)
@@ -115,10 +115,28 @@ gmn_exit <- mn_exit %>% group_by(start_reward, travel_key_cond) %>% summarise(gm
 
 ```{r}
 # plot the group mean exit data... 
-ggplot(gmn_exit, aes(x = factor(start_reward), y = gm_thresh, color = travel_key_cond)) +
+group_exit_plot <- ggplot(gmn_exit, aes(x = factor(start_reward), y = gm_thresh, color = travel_key_cond)) +
   geom_line(aes(group = travel_key_cond), size = 2) +
-  geom_errorbar(aes(ymin = gm_thresh - gsd_thresh, ymax = gm_thresh+gsd_thresh), width = .1, size = 2) + 
-geom_point(size = 4) + ylab('group mean exit threshold') + xlab('start reward') + labs(color = 'travel effort') + theme_minimal()
+  #geom_errorbar(aes(ymin = gm_thresh - gsd_thresh, ymax = gm_thresh+gsd_thresh), width = .1, size = 2) + 
+    geom_ribbon(aes(ymin =  gm_thresh - gsd_thresh, ymax =  gm_thresh + gsd_thresh),
+                fill = 'grey70'  , size = 1.5) +
+ ylab('group mean exit threshold') + xlab('start reward') + labs(color = 'travel effort') +
+  theme_classic() +
+  geom_point(size = 3.5) +
+  theme(axis.text = element_text(size = rel(2))) + 
+  theme(axis.title = element_text(size = rel(2))) +
+  labs(colour = "Travel \nAction") + 
+  theme(legend.title = element_text(size = rel(2))) + 
+  theme(legend.text = element_text(size = rel(2))) + 
+  theme(strip.text.x = element_text(size = rel(2))) +
+  theme(panel.spacing = unit(1.5, "lines")) + 
+  scale_x_discrete(name = 'First Harvest Reward', breaks=c(60,90,120)) +
+  ylab('Last Reward Before Exit') + 
+  ggtitle('Choice Data (N = 50)') +
+  scale_colour_grey() + theme(plot.title = element_text(size = rel(2)))
+
+ggsave('/Users/evanrussek/forage_jsp/analysis/plots/choice_data.png', plot = group_exit_plot)
+
 ```
 
 
@@ -208,18 +226,30 @@ filt_lag_1r <- make_trial_filt_lag(cdata,100,100)
 # plot the group average for different ways of doing this.
 plot_group_lag <- function(trial_filt_lag){
   
-  group_lag <- trial_filt_lag %>% group_by(start_reward, travel_key_cond, phase) %>% summarise(gm_lag = mean(mean_lag), gml_lag = mean(mean_lag, na.rm = TRUE), gsd_lag = sd(mean_lag, na.rm = TRUE)/sqrt(n())) %>% ungroup()
+  group_lag <- trial_filt_lag %>% group_by(start_reward, travel_key_cond, phase) %>% summarise(gm_lag = mean(mean_log_lag), gml_lag = mean(mean_log_lag, na.rm = TRUE), gsd_lag = sd(mean_log_lag, na.rm = TRUE)/sqrt(n())) %>% ungroup()
   
   group_plot <- ggplot(group_lag, 
          aes(x = factor(start_reward), y = gml_lag, color = travel_key_cond)) +
     geom_ribbon(aes(ymin = gml_lag - gsd_lag, ymax = gml_lag+gsd_lag),
-                fill = 'grey70') + #, width = .1, size = 2) + 
+                fill = 'grey70'  , size = 1.5) + 
     geom_line(aes(group = travel_key_cond), size = 2) + 
     facet_wrap(~phase) + geom_point(size = 2) +
-    xlab('start_reward') +
-    ylab('group mean log lag')
+    xlab('First Harvest Reward') +
+    ylab('Press Lag (log msec)') +  theme_classic() +
+    ggtitle('Lag Data (First Travel/Harvest, N = 50)') +
+
+  theme(axis.text = element_text(size = rel(2))) + 
+  theme(axis.title = element_text(size = rel(2))) +
+  labs(colour = "Travel \nAction") + 
+  theme(legend.title = element_text(size = rel(2))) + 
+  theme(plot.title = element_text(size = rel(2))) + 
+  theme(legend.text = element_text(size = rel(2))) + 
+  theme(strip.text.x = element_text(size = rel(2))) +
+  theme(panel.spacing = unit(1.5, "lines")) + 
+  scale_x_discrete(name = 'First Harvest Reward', breaks=c(60,90,120)) +scale_colour_grey()
+
   
-  print(group_plot)
+  return(group_plot)
 }
 
 trial_filt_lag_ar <- make_trial_filt_lag(cdata,100,100)
@@ -229,9 +259,13 @@ plot_group_lag(trial_filt_lag_ar)
 ```{r}
 #trial_filt_lag_ar <- make_trial_filt_lag(cdata,100,100)
 #plot_group_lag(trial_filt_lag_ar)
-trial_filt_lag_1r <- make_trial_filt_lag(cdata,10,2)
-plot_group_lag(trial_filt_lag_1r)
+trial_filt_lag_1r <- make_trial_filt_lag(cdata,20,2)
+lag_plot1 <- plot_group_lag(trial_filt_lag_1r)
+ggsave('/Users/evanrussek/forage_jsp/analysis/plots/lag_data1.png', plot = lag_plot1)
+
+print(lag_plot1)
 ```
+
 ```{r}
 head(trial_filt_lag_1r)
 ```

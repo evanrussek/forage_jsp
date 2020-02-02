@@ -8,9 +8,9 @@ This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute
 Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
 
 ```{r}
-setwd("C:/Users/erussek/forage_jsp/analysis")
-#setwd("/Users/evanrussek/forage_jsp/analysis")
-rm(list = ls())
+#setwd("C:/Users/erussek/forage_jsp/analysis")
+setwd("/Users/evanrussek/forage_jsp/analysis")
+#rm(list = ls())
 library(tidyr)
 library(dplyr)
 library(zoo)
@@ -26,7 +26,7 @@ When you save the notebook, an HTML file containing the code and output will be 
 
 The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
 ```{r}
-sim_data <- read.csv("C:/Users/erussek/foraging/sim_data.csv")
+sim_data <- read.csv("/Users/evanrussek/foraging/sim_data.csv")
 ```
 
 ```{r}
@@ -43,17 +43,73 @@ head(sim_lag_data)
   
 sim_lag_data_long <- sim_lag_data %>% gather(phase, lag, harvest_lag, travel_lag)
 #ggplot(sim_data_sum, aes(x = start_R, y = travel_lag))
+
+sim_lag_data_long$phase <- factor(sim_lag_data_long$phase, levels = c("harvest_lag", "travel_lag"), labels = c("Havest", "Travel"))
 ```
 ```{r}
-ggplot(sim_lag_data_long, aes(x = start_R, y = lag, color = factor(vigor_cost2))) + facet_wrap(~phase)+ geom_line(size = 1.2) #+ geom_point(size = 2) #+ theme_classic2()
+
+#phase_labs = c("Harvest", "Travel")
+#names(phase_labs)
+
+sim_p1 <- ggplot(sim_lag_data_long %>% 
+                   filter(start_R %in% c(60, 90, 120), 
+                          vigor_cost2 < 20), aes(x = factor(start_R), y = lag, color = factor(vigor_cost2), group = factor(vigor_cost2))) + 
+  theme_classic() +
+  facet_wrap(~phase)+ 
+  geom_line(size = rel(2)) + geom_point(size = rel(3.5)) + 
+  xlab('First Harvest Reward') + ylab('Press Lag (arbitrary units)')  +
+  ggtitle('Optimal Model Lag Predictions') +
+  theme(axis.text = element_text(size = rel(2))) + 
+  theme(axis.title = element_text(size = rel(2))) +
+  labs(colour = "Travel \nAction \nCost") + 
+  theme(legend.title = element_text(size = rel(2))) + 
+  theme(plot.title = element_text(size = rel(2))) + 
+  theme(legend.text = element_text(size = rel(2))) + 
+  theme(strip.text.x = element_text(size = rel(2))) +
+  theme(panel.spacing = unit(1.5, "lines")) + 
+  theme(axis.text.y = element_blank()) +
+  scale_x_discrete(name = 'First Harvest Reward', breaks=c(60,90,120)) +
+  scale_colour_grey()
+
+
+sim_p1
+
+ggsave('/Users/evanrussek/forage_jsp/analysis/plots/model_lag_pred.png', plot = sim_p1)
+
+#setwd("/Users/evanrussek/forage_jsp/analysis")
+
+
+#+ geom_point(size = 2) #+ theme_classic2()
 ```
+
 ```{r}
 
-ggplot(sim_data_sum, aes(x = start_R, y = exit_thresh, color = factor(vigor_cost2))) + geom_line(size = 1.2)# + geom_point(size = 2)
-  
+sim_p2 <- ggplot(sim_data_sum %>% 
+         filter(start_R %in% c(60, 90, 120), 
+                          vigor_cost2 < 20),
+  aes(x = factor(start_R), y = exit_thresh, color = factor(vigor_cost2), group = factor(vigor_cost2))) +
+  theme_classic() +
+  geom_line(size = 2) + geom_point(size = 3.5) +
+  theme(axis.text = element_text(size = rel(2))) + 
+  theme(axis.title = element_text(size = rel(2))) +
+  labs(colour = "Travel \nAction \nCost") + 
+  theme(legend.title = element_text(size = rel(2))) + 
+  theme(legend.text = element_text(size = rel(2))) + 
+  theme(strip.text.x = element_text(size = rel(2))) +
+  theme(panel.spacing = unit(1.5, "lines")) + 
+  scale_x_discrete(name = 'First Harvest Reward', breaks=c(60,90,120)) +
+  ylab('Last Reward Before Exit') + 
+  ggtitle('Optimal Model Choice Predictions') +
+  scale_colour_grey() +  theme(plot.title = element_text(size = rel(2)))
 
+plot(sim_p2)
+
+ggsave('/Users/evanrussek/forage_jsp/analysis/plots/model_choice_pred.png', plot = sim_p2)
 ```
 
+```{r}
+
+```
 
 
 
