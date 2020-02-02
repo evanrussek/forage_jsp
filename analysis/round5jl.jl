@@ -5,11 +5,11 @@ using DataFrames
 using DataFramesMeta
 using CategoricalArrays
 using Gadfly
+using MixedModels
+using StatsBase
 
-# read in the data
+#### READ in the data and clean it #####
 data = CSV.read("data/run5_data.csv")
-
-first(data,6)
 
 # add s_num to it as a factor, get number of subjects
 data.s_num = groupindices(groupby(data,:subjectID))
@@ -50,7 +50,7 @@ function clean_subj_data(s_data)
         return s_data
 end
 
-#
+# aggregate all clean data...
 cdata = DataFrame();
 for s = 1:n_subj
         global cdata
@@ -58,9 +58,7 @@ for s = 1:n_subj
         cdata = vcat(cdata,clean_subj_data(s_data))
 end
 
-# get trial exits should work on trial data...
-#trial_data = @where(cdata, :s_num .== 1, :trial_num .== 1)
-
+###### EXIT THRESHOLD ANALYSIS ###########
 function get_trial_exits(trial_data)
         last_phase = trial_data.phase[end]
         if (last_phase == "HARVEST")
@@ -113,19 +111,38 @@ group_exit_plot = plot(group_exit_data, x =:start_reward, y =:exit_thresh,
         Geom.point, Geom.line, Geom.errorbar,
         Theme(line_width = 3pt))
 
-## let's try to use the linear mixed effecs package to model this...
-using MixedModels
+## MIXED MODEL EXIT THRESHOLD DATA
+# get all variables into the correct data type
 round_exit_data.subj = categorical(round_exit_data.s_num)
-#CategoricalArray(round_exit_data.s_num)
 round_exit_data.start_reward = convert(Array{Float64,1}, round_exit_data.start_reward)
 round_exit_data.last_reward = convert(Array{Float64,1}, round_exit_data.last_reward)
 round_exit_data.trial_num = convert(Array{Float64,1}, round_exit_data.trial_num)
 round_exit_data.round = convert(Array{Float64,1}, round_exit_data.round)
+# center start reward so that we can look at effect on average...
 round_exit_data.start_reward = round_exit_data.start_reward .- mean(round_exit_data.start_reward)
-# make sure the data types are correct!
 
-# maybe we have unused factor levels?
 exit_m = fit!(LinearMixedModel(@formula(last_reward ~ 1 + start_reward*travel_key_cond + trial_num  +
 (1 + start_reward*travel_key_cond + trial_num | subj)), round_exit_data))
 
-## try to fit the other data...
+exit_m
+
+##### LAG DATA ###### 
+lag_data = @select(cdata, :s_num, :travel_key_cond, :start_reward,
+ :phase, :trial_num, :lag, :correct_key, :round, :reward_true)
+ # remove first press
+lag_data = by(lag_data, [:s_num, :trial_num, :round, :phase],
+        df -> df[2:end,:])
+# add press number
+lag_data = by(lag_data, [:s_num, :trial_num, :round, :phase],
+        df -> @transform(df, press_num = 1:nrow(df)))
+# filter out extreme values
+lag_data = by(lag_data, :s_num,
+        df -> @where(df, .&(:lag .< median(:lag) + 3*mad(:lag),
+        :lag .> median(:lag) - 3*mad(:lag))))
+# compute log lag
+lag_data = @transform(lag_data, log_lag = log.(:lag))
+
+
+
+# filter the row number?
+# filter the
