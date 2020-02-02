@@ -126,7 +126,7 @@ exit_m = fit!(LinearMixedModel(@formula(last_reward ~ 1 + start_reward*travel_ke
 
 exit_m
 
-##### LAG DATA ###### 
+##### LAG DATA ######
 lag_data = @select(cdata, :s_num, :travel_key_cond, :start_reward,
  :phase, :trial_num, :lag, :correct_key, :round, :reward_true)
  # remove first press
@@ -141,6 +141,62 @@ lag_data = by(lag_data, :s_num,
         :lag .> median(:lag) - 3*mad(:lag))))
 # compute log lag
 lag_data = @transform(lag_data, log_lag = log.(:lag))
+lag_data.subj = CategoricalArray(lag_data.s_num)
+
+# average lag by round
+round_lag = by(lag_data,[:subj, :start_reward, :travel_key_cond, :round, :phase],
+        df -> DataFrame(trial_num = first(df.trial_num),
+                        lag = median(df.lag),
+                        log_lag = mean(df.log_lag)))
+
+# average rounds within a trial
+trial_lag = by(round_lag, [:subj, :start_reward, :travel_key_cond, :phase],
+        df -> DataFrame(trial_num = first(df.trial_num),
+                        lag = median(df.lag),
+                        log_lag = mean(df.log_lag)))
+
+# average accross subjects
+group_lag = by(trial_lag, [:start_reward, :travel_key_cond, :phase],
+        df -> DataFrame(trial_num = first(df.trial_num),
+                        lag = median(df.lag),
+                        log_lag = mean(df.log_lag),
+                        log_lag_sem = std(df.log_lag)/sqrt(size(df,1))))
+group_lag = @transform(group_lag, upper_ll = :log_lag + :log_lag_sem, lower_ll = :log_lag - :log_lag_sem)
+group_lag.phase = CategoricalArray(group_lag.phase)
+levels!(group_lag.phase, ["HARVEST", "TRAVEL"])
+
+plot(group_lag, x=:start_reward, y=:log_lag, ymax =:upper_ll, ymin =:lower_ll,
+color=:travel_key_cond, xgroup=:phase,
+        Geom.subplot_grid(Geom.line, Geom.point, Geom.errorbar),
+        Theme(line_width = 3pt))
+
+#### MIXED MODEL LAG #######
+
+## MIXED MODEL EXIT THRESHOLD DATA
+# get all variables into the correct data type
+lag_data.subj = categorical(lag_data.s_num)
+lag_data.start_reward = convert(Array{Float64,1}, lag_data.start_reward)
+lag_data.log_lag = convert(Array{Float64,1}, lag_data.log_lag)
+lag_data.trial_num = convert(Array{Float64,1}, lag_data.trial_num)
+lag_data.round = convert(Array{Float64,1}, lag_data.round)
+lag_data.press_num = convert(Array{Float64,1}, lag_data.press_num)
+
+
+# center start reward so that we can look at effect on average...
+lag_data.start_reward = lag_data.start_reward .- mean(lag_data.start_reward)
+
+lag_m = fit!(LinearMixedModel(@formula(log_lag ~ 1 + round + press_num + trial_num +
+                        travel_key_cond&round + phase&round + travel_key_cond&phase&round + travel_key_cond*start_reward*phase +
+                        (1 + round + press_num + trial_num +
+                        travel_key_cond&round + phase&round +
+                        travel_key_cond&phase&round +
+                        travel_key_cond*start_reward*phase| subj)), lag_data))
+
+
+
+
+
+#plot(@where(lag_data, :s_num .< 6), ygroup =:subj, x =:log_lag, Geom.subplot_grid(Geom.histogram))
 
 
 
