@@ -135,8 +135,11 @@ group_exit_plot <- ggplot(gmn_exit, aes(x = factor(start_reward), y = gm_thresh,
   ggtitle('Choice Data (N = 50)') +
   scale_colour_grey() + theme(plot.title = element_text(size = rel(2)))
 
-ggsave('/Users/evanrussek/forage_jsp/analysis/plots/choice_data.png', plot = group_exit_plot)
+#ggsave('/Users/evanrussek/forage_jsp/analysis/plots/choice_data.png', plot = group_exit_plot)
 
+```
+```{r}
+gmn_exit
 ```
 
 
@@ -222,6 +225,14 @@ filt_lag_1r <- make_trial_filt_lag(cdata,100,100)
 
 ```
 
+```{r}
+filt_lag <- make_filt_lag(cdata, 1000, 10000)
+head(filt_lag)
+```
+```{r}
+cdata
+```
+
 ```{r }
 # plot the group average for different ways of doing this.
 plot_group_lag <- function(trial_filt_lag){
@@ -253,6 +264,7 @@ plot_group_lag <- function(trial_filt_lag){
 }
 
 trial_filt_lag_ar <- make_trial_filt_lag(cdata,100,100)
+  group_lag <- trial_filt_lag_ar %>% group_by(start_reward, travel_key_cond, phase) %>% summarise(gm_lag = mean(mean_log_lag), gml_lag = mean(mean_log_lag, na.rm = TRUE), gsd_lag = sd(mean_log_lag, na.rm = TRUE)/sqrt(n())) %>% ungroup()
 plot_group_lag(trial_filt_lag_ar)
 
 ```
@@ -267,7 +279,12 @@ print(lag_plot1)
 ```
 
 ```{r}
-head(trial_filt_lag_1r)
+group_lag
+```
+
+
+```{r}
+trial_filt_lag_1r
 ```
 
 
